@@ -26,16 +26,16 @@
 <meta property="og:site_name" content="zhangphh">
 <meta property="og:description" content="前言之前有段工作经历涉及到了chat相关，而消息的发送 -&gt; 存储 -&gt; 消费是由不同的团队负责的，因此消息如何再多个团队之间流通、以及通过什么介质传递都是需要考虑的问题。 之前我负责过一些消息消费的相关工作，消息发送团队将消息推送到kafka之后，由我们去订阅topic并消费对应的分区，拿到消息之后做对应的消息类型解析、消息发送双方可见性分析、接收方未读数、推送等业务处理。本文旨在记">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/80d56c66d935fd536a67c369798a31ef.png">
+<meta property="og:image" content="http://gips0.baidu.com/it/u=1690853528,2506870245&fm=3028&app=3028&f=JPEG&fmt=auto?w=1024&h=1024">
 <meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/7247ada71b52740fb7e9eb4713e921e0.png">
 <meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/0875a160e32802d14a70183d09e926d1.png">
 <meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/37a9910c450eef9c59f1b53bdd3a5a31.png">
 <meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/931490e2deb7ca3d158495261f9239e4.png">
 <meta property="article:published_time" content="2024-11-16T12:29:04.000Z">
-<meta property="article:modified_time" content="2024-11-16T12:56:09.550Z">
+<meta property="article:modified_time" content="2024-11-16T13:05:03.994Z">
 <meta property="article:author" content="zhangphh">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/80d56c66d935fd536a67c369798a31ef.png">
+<meta name="twitter:image" content="http://gips0.baidu.com/it/u=1690853528,2506870245&fm=3028&app=3028&f=JPEG&fmt=auto?w=1024&h=1024">
   
   
   
@@ -288,7 +288,7 @@
                 
                 <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>之前有段工作经历涉及到了chat相关，而消息的发送 -&gt; 存储 -&gt; 消费是由不同的团队负责的，因此消息如何再多个团队之间流通、以及通过什么介质传递都是需要考虑的问题。</p>
 <p>之前我负责过一些消息消费的相关工作，消息发送团队将消息推送到kafka之后，由我们去订阅topic并消费对应的分区，拿到消息之后做对应的消息类型解析、消息发送双方可见性分析、接收方未读数、推送等业务处理。本文旨在记录之前工作中遇到的相关问题以及从consumer端如何优化处理。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/80d56c66d935fd536a67c369798a31ef.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="http://gips0.baidu.com/it/u=1690853528,2506870245&fm=3028&app=3028&f=JPEG&fmt=auto?w=1024&h=1024" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <p>可以看到，消息系统中引入了kafka，因此如果kafka出现问题，那整个系统都会出现问题。</p>
 <h3 id="顺序问题"><a href="#顺序问题" class="headerlink" title="顺序问题"></a>顺序问题</h3><h4 id="1、为什么要保证消息的顺序"><a href="#1、为什么要保证消息的顺序" class="headerlink" title="1、为什么要保证消息的顺序"></a>1、为什么要保证消息的顺序</h4><p>我们之所以能够回复对方发过来的消息的依据就是对方消息内容，因此对于chat系统来说，消息的顺序性是必须要求保证的硬核标准，如果消息乱序，那这个chat系统可以说是完全报废。因此对于chat系统来说<strong>必须要保证消息的顺序性</strong> 。</p>
 <h4 id="2、如何保证消息的顺序性"><a href="#2、如何保证消息的顺序性" class="headerlink" title="2、如何保证消息的顺序性"></a>2、如何保证消息的顺序性</h4><p>众所周知，kafka有topic的概念，每个topic可以拥有多个<code>分区(partition)</code>，而每个分区的内部都是有序的<br><img src="https://i-blog.csdnimg.cn/blog_migrate/7247ada71b52740fb7e9eb4713e921e0.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
@@ -492,7 +492,7 @@
     <div class="footer-inner">
   
     <div class="footer-content">
-       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
     </div>
   
   
