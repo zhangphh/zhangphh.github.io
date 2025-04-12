@@ -20,26 +20,25 @@
   <meta name="author" content="zhangphh">
   <meta name="keywords" content="">
   
-    <meta name="description" content="1.环境搭建node、github相关环境搭建参照: 搭建Hexo个人博客详细教程 2.Hexo更换主题主题选用 Fluid，效果如下 2.1 Fluid安装参考Fluid文档: Fluid开始使用 推荐使用npm方式安装 2.2 Fluid配置指南参照文档: Fluid配置指南 3. Hexo创建文档及提交方式3.1 配置github仓库在本地所创建的项目里面找到 _congif.yml文件，找">
+    <meta name="description" content="1、生产者1.1、batch生产者在发送消息时不会将每一条消息都单独发送到broker中，而是采取了批量发送以此减少网络请求次数和磁盘IO次数，消息会先发到缓冲区，这个缓冲区的大小是可配置的，在缓冲区中将消息进行分批，缓冲区大小默认为32M，当缓冲区使用完后消息的追加将会被阻塞直到有空闲的区域。batch.size:  此参数配置发送到同一分区的批量提交的数据的大小，默认为16k，当消息积压到这个">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hexo+GitHub+阿里云域名解析搭建博客">
-<meta property="og:url" content="https://zhangphh-blogs.top/2024/11/16/Hexo-GitHub-%E9%98%BF%E9%87%8C%E4%BA%91%E5%9F%9F%E5%90%8D%E8%A7%A3%E6%9E%90%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/index.html">
+<meta property="og:title" content="kafka生产者">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/04/12/kafka%E7%94%9F%E4%BA%A7%E8%80%85/index.html">
 <meta property="og:site_name" content="zhangphh">
-<meta property="og:description" content="1.环境搭建node、github相关环境搭建参照: 搭建Hexo个人博客详细教程 2.Hexo更换主题主题选用 Fluid，效果如下 2.1 Fluid安装参考Fluid文档: Fluid开始使用 推荐使用npm方式安装 2.2 Fluid配置指南参照文档: Fluid配置指南 3. Hexo创建文档及提交方式3.1 配置github仓库在本地所创建的项目里面找到 _congif.yml文件，找">
+<meta property="og:description" content="1、生产者1.1、batch生产者在发送消息时不会将每一条消息都单独发送到broker中，而是采取了批量发送以此减少网络请求次数和磁盘IO次数，消息会先发到缓冲区，这个缓冲区的大小是可配置的，在缓冲区中将消息进行分批，缓冲区大小默认为32M，当缓冲区使用完后消息的追加将会被阻塞直到有空闲的区域。batch.size:  此参数配置发送到同一分区的批量提交的数据的大小，默认为16k，当消息积压到这个">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img1.baidu.com/it/u=4109353140,439426862&fm=253&fmt=auto&app=138&f=JPEG?w=844&h=500">
-<meta property="article:published_time" content="2024-11-16T14:19:45.000Z">
-<meta property="article:modified_time" content="2024-11-16T15:19:37.004Z">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/f8179af0773f3afc3ee5a570d7f6eda8.png">
+<meta property="article:published_time" content="2025-04-12T06:33:40.000Z">
+<meta property="article:modified_time" content="2025-04-12T06:35:54.516Z">
 <meta property="article:author" content="zhangphh">
-<meta property="article:tag" content="Hexo">
-<meta property="article:tag" content="GitHub">
-<meta property="article:tag" content="阿里云">
+<meta property="article:tag" content="中间件">
+<meta property="article:tag" content="kafka">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://img1.baidu.com/it/u=4109353140,439426862&fm=253&fmt=auto&app=138&f=JPEG?w=844&h=500">
+<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/f8179af0773f3afc3ee5a570d7f6eda8.png">
   
   
   
-  <title>Hexo+GitHub+阿里云域名解析搭建博客 - zhangphh</title>
+  <title>kafka生产者 - zhangphh</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -205,7 +204,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Hexo+GitHub+阿里云域名解析搭建博客"></span>
+            <span id="subtitle" data-typed-text="kafka生产者"></span>
           
         </div>
 
@@ -221,8 +220,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-11-16 22:19" pubdate>
-          2024年11月16日 晚上
+        <time datetime="2025-04-12 14:33" pubdate>
+          2025年4月12日 下午
         </time>
       </span>
     
@@ -233,7 +232,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          545 字
+          1.1k 字
         
       </span>
     
@@ -244,7 +243,7 @@
         
         
         
-          5 分钟
+          10 分钟
         
       </span>
     
@@ -281,27 +280,25 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Hexo+GitHub+阿里云域名解析搭建博客</h1>
+            <h1 id="seo-header">kafka生产者</h1>
             
             
               <div class="markdown-body">
                 
-                <h1 id="1-环境搭建"><a href="#1-环境搭建" class="headerlink" title="1.环境搭建"></a>1.环境搭建</h1><p>node、github相关环境搭建参照: <a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_44763569/article/details/106435118">搭建Hexo个人博客详细教程</a></p>
-<h1 id="2-Hexo更换主题"><a href="#2-Hexo更换主题" class="headerlink" title="2.Hexo更换主题"></a>2.Hexo更换主题</h1><p>主题选用 <a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/page/2/#board">Fluid</a>，效果如下<br><img src="https://i-blog.csdnimg.cn/direct/fb20f206a78b416591a2a54e4a89437c.png" srcset="/img/loading.gif" lazyload alt="Fluid主题首页效果图"></p>
-<h2 id="2-1-Fluid安装"><a href="#2-1-Fluid安装" class="headerlink" title="2.1 Fluid安装"></a>2.1 Fluid安装</h2><p>参考Fluid文档: <a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/docs/start/">Fluid开始使用</a></p>
-<p>推荐使用npm方式安装</p>
-<h2 id="2-2-Fluid配置指南"><a href="#2-2-Fluid配置指南" class="headerlink" title="2.2 Fluid配置指南"></a>2.2 Fluid配置指南</h2><p>参照文档: <a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/docs/guide/">Fluid配置指南</a></p>
-<h1 id="3-Hexo创建文档及提交方式"><a href="#3-Hexo创建文档及提交方式" class="headerlink" title="3. Hexo创建文档及提交方式"></a>3. Hexo创建文档及提交方式</h1><h2 id="3-1-配置github仓库"><a href="#3-1-配置github仓库" class="headerlink" title="3.1 配置github仓库"></a>3.1 配置github仓库</h2><p>在本地所创建的项目里面找到 _congif.yml文件，找到 deploy 字段，把以下代码放进去，填写第一步新建的仓库地址<br><img src="https://i-blog.csdnimg.cn/direct/b073575427764f1880fb4bdce527d1eb.png" srcset="/img/loading.gif" lazyload alt="配置github仓库"></p>
-<h2 id="3-2-安装推送工具"><a href="#3-2-安装推送工具" class="headerlink" title="3.2 安装推送工具"></a>3.2 安装推送工具</h2><p>用npm安装一个推送工具，将本地项目推到仓库上</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">npm install hexo-deployer-git --save<br></code></pre></td></tr></table></figure>
-<h2 id="3-3-创建文章及推送"><a href="#3-3-创建文章及推送" class="headerlink" title="3.3 创建文章及推送"></a>3.3 创建文章及推送</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">hexo new 测试文章 <span class="hljs-comment"># 1.创建新文章，&#x27;测试文章&#x27;为文件名，文章格式为markdown，新文章在source/_posts目录下</span><br>hexo clean <span class="hljs-comment"># 2.此命令用于清除缓存(非必须但建议执行)</span><br>hexo g <span class="hljs-comment"># 3.hexo generate简写，即生成静态文件</span><br>hexo deploy <span class="hljs-comment"># 4. 推送到github</span><br></code></pre></td></tr></table></figure>
-<p>注意: 只有推送到github后才能通过域名方式访问，否则只能在本地localhost:4000(<code>hexo server</code> 命令启动本地server)查看</p>
-<h1 id="4-域名绑定"><a href="#4-域名绑定" class="headerlink" title="4. 域名绑定"></a>4. 域名绑定</h1><h2 id="4-1-域名购买"><a href="#4-1-域名购买" class="headerlink" title="4.1 域名购买"></a>4.1 域名购买</h2><p>这里域名选择阿里云， 域名购买方式可自行百度</p>
-<h2 id="4-2-域名解析"><a href="#4-2-域名解析" class="headerlink" title="4.2 域名解析"></a>4.2 域名解析</h2><p>域名购买后需解析，解析步骤及绑定github参考: <a target="_blank" rel="noopener" href="https://www.cnblogs.com/yz0812/p/10392711.html">hexo绑定个人域名</a></p>
-<p>具体解析记录可参考下面阿里云域名解析记录截图:<br><img src="https://i-blog.csdnimg.cn/direct/ae01ca2a1ec04d35a93e250dd7d3f1fd.png" srcset="/img/loading.gif" lazyload alt="阿里云域名解析记录"></p>
-<h1 id="5-使用域名访问博客"><a href="#5-使用域名访问博客" class="headerlink" title="5.使用域名访问博客"></a>5.使用域名访问博客</h1><p>上述步骤完成后即可通过域名方式博客<br><img src="https://i-blog.csdnimg.cn/direct/017782a0711c4aa487a59ff2cb177d5c.png" srcset="/img/loading.gif" lazyload alt="使用域名访问博客"></p>
-<h1 id="6-其他问题"><a href="#6-其他问题" class="headerlink" title="6.其他问题"></a>6.其他问题</h1><h2 id="6-1-markdown图片失效问题"><a href="#6-1-markdown图片失效问题" class="headerlink" title="6.1 markdown图片失效问题"></a>6.1 markdown图片失效问题</h2><p>有种原因是图床存在防盗链，会报403禁止访问，此种问题解决方案可参考: <a target="_blank" rel="noopener" href="https://juejin.cn/post/7368276508136505407">外链图片不显示</a></p>
-<h2 id="6-2-GitHub配置自定义域名新推送失效问题"><a href="#6-2-GitHub配置自定义域名新推送失效问题" class="headerlink" title="6.2 GitHub配置自定义域名新推送失效问题"></a>6.2 GitHub配置自定义域名新推送失效问题</h2><p>域名绑定后已经能通过个人域名访问托管在github的博客了，但存在一个问题,就是每次hexo d重新部署后,配置的 GitHub Pages 自定义域名消失<br>解决方案也很简单就在<code>source</code> 目录下新建一个CNAME文件，将个人域名填进去即可，可参考: <a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2446582">为HEXO绑定自己的域名</a></p>
+                <h3 id="1、生产者"><a href="#1、生产者" class="headerlink" title="1、生产者"></a>1、生产者</h3><h4 id="1-1、batch"><a href="#1-1、batch" class="headerlink" title="1.1、batch"></a>1.1、batch</h4><p>生产者在发送消息时不会将每一条消息都单独发送到broker中，而是采取了批量发送以此减少网络请求次数和磁盘IO次数，消息会先发到缓冲区，这个缓冲区的大小是可配置的，在缓冲区中将消息进行分批，缓冲区大小默认为32M，当缓冲区使用完后消息的追加将会被阻塞直到有空闲的区域。<br><img src="https://i-blog.csdnimg.cn/blog_migrate/f8179af0773f3afc3ee5a570d7f6eda8.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><strong>batch.size</strong>:  此参数配置发送到同一分区的批量提交的数据的大小，默认为16k，当消息积压到这个值就会批量发送，增大batch可以增加吞吐量，减小batch客降低消息延迟。</p>
+<p><strong>linger.ms</strong>：但生产者也并不是非要等到大小挤压到一个批次大小才会发送，此参数就是等待一个批次大小的时间，linger.ms参数控制batch最大的空闲时间，超过该时间的batch也会被发送到broker端。</p>
+<p>说明：当这两个参数同时设置的时候，只要两个条件中满足一个就会发送。比如说batch.size设置16kb，linger.ms设置50ms，那么当消息积压达到16kb就会发送，如果没有到达16kb，那么在第一个消息到来之后的50ms之后消息将会发送。</p>
+<h3 id="2、同步发送与异步发送"><a href="#2、同步发送与异步发送" class="headerlink" title="2、同步发送与异步发送"></a>2、同步发送与异步发送</h3><h4 id="2-1、同步方式"><a href="#2-1、同步方式" class="headerlink" title="2.1、同步方式"></a>2.1、同步方式</h4><p>同步方式发送消息必需要等结果返回。</p>
+<h4 id="2-2、异步方式"><a href="#2-2、异步方式" class="headerlink" title="2.2、异步方式"></a>2.2、异步方式</h4><p>生产者将消息发送给kafka之后不会等待结果返回，调用者可以继续其他的工作。对sarama函数库来说异步发送需要注意的地方就是Return.Successes的设置，如果没有将Return.Successes设置为true，而且消息发送的过程中没有出现错误，则在select块中要设置default，否则会挂住，如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(asyncProducer sarama.AsyncProducer)</span></span> &#123;<br>	<span class="hljs-keyword">for</span>&#123;<br>		<span class="hljs-keyword">select</span> &#123;<br>		<span class="hljs-keyword">case</span> success := &lt;-asyncProducer.Successes():<br>			log.Infof(<span class="hljs-string">&quot;Produced message successes: [%s]\n&quot;</span>, success.Value)<br>		<span class="hljs-keyword">case</span> err := &lt;-asyncProducer.Errors():<br>			log.Errorf(<span class="hljs-string">&quot;Produced message failure: &quot;</span>, err)<br>		<span class="hljs-keyword">default</span>:<br>			log.Infof(<span class="hljs-string">&quot;Produced messsage default&quot;</span>)<br>			<br>		&#125;<br>	&#125;<br>&#125;(asyncProducer)<br></code></pre></td></tr></table></figure>
+<p>因为如果没有default语句，则上面的两个case都不会匹配到，就会挂在这。如果不写default语句，则Return.Successes要置为true。</p>
+<p>此外还需考虑的一个问题就是当设置了Return.Successes的值为true，但是没有使用producer.Successes()，也会出现为题，因为随着生产消息的成功，success的chan会被写满(kafka内部控制大小)，写满的结果就是导致后面的success结果丢失，并且会导致producer不可用。</p>
+<p>所以config.Producer.Return.Successes &#x3D; true和操作&lt;-producer.Successes()必须配套使用；配置成true，那么就要去读取Successes，如果配置成false，则不能去读取Successes。</p>
+<h3 id="3、分区策略"><a href="#3、分区策略" class="headerlink" title="3、分区策略"></a>3、分区策略</h3><p>指明分区序号，会直接发送到被指定的分区中<br>没有指明分区序号，但消息存在key值，则会将key的hash值与topic的分区数取余得到分区序号<br>即没有partition序号，有没有key值的情况会在第一次调用时随机生成一个小于分区数的值，后面每次调用都会加一并与分区数取余作为分区号，此种方式即为round-robin方式</p>
+<h3 id="4、ack应答机制"><a href="#4、ack应答机制" class="headerlink" title="4、ack应答机制"></a>4、ack应答机制</h3><p>ISR(in-sync replica set)<br>对于leader分区，它维护了一个ISR集合，记录了和leader保持同步的foller集合，当ISR中的follower完成同步之后会向leader发送ACK。当follower长时间未向leader同步消息，此follower会被踢出ISR，该函数阈值可有replica.lag.time.max.ms(broker)参数设定，当leader发生故障之后会被从ISR中移除，然后从剩下的ISR中选出一个作为leader。</p>
+<h4 id="4-1、NoResponse-0"><a href="#4-1、NoResponse-0" class="headerlink" title="4.1、NoResponse (0)"></a>4.1、NoResponse (0)</h4><p>当ack设置为NoResponse时，producer不等待broker的ack，这一操作提供了一个最低的延迟，broker还没来的写入磁盘就返回，设置为此值延迟最低。</p>
+<h4 id="4-2、WaitForLocal-1"><a href="#4-2、WaitForLocal-1" class="headerlink" title="4.2、WaitForLocal (1)"></a>4.2、WaitForLocal (1)</h4><p>ack设置为1时，会等待leader分区落盘成功后返回ack，如果leader落盘失败会重试，如果follower同步之前leader出现故障，数据将会丢失。</p>
+<h4 id="4-3、WaitForAll-1"><a href="#4-3、WaitForAll-1" class="headerlink" title="4.3、WaitForAll (-1)"></a>4.3、WaitForAll (-1)</h4><p>ack设置为-1，表示所有的副本成功落盘后才返回ack，但是当所有的分区副本同步成功后在leader分区返回ack之前leader分区出现故障，则会导致producer重试，消息重复，可靠性最高。</p>
 
                 
               </div>
@@ -320,7 +317,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E9%80%A0%E8%BD%AE%E5%AD%90-%E5%B7%A5%E5%85%B7%E7%AF%87/" class="category-chain-item">造轮子-工具篇</a>
+  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">学习笔记</a>
   
   
 
@@ -335,11 +332,9 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Hexo/" class="print-no-link">#Hexo</a>
+        <a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="print-no-link">#中间件</a>
       
-        <a href="/tags/GitHub/" class="print-no-link">#GitHub</a>
-      
-        <a href="/tags/%E9%98%BF%E9%87%8C%E4%BA%91/" class="print-no-link">#阿里云</a>
+        <a href="/tags/kafka/" class="print-no-link">#kafka</a>
       
     </div>
   
@@ -353,15 +348,21 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2025/04/12/cachego%E5%88%86%E7%89%87%E3%80%81%E4%B8%8A%E6%8A%A5%E3%80%81GC%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6%E5%8E%9F%E7%90%86/" title="cachego分片、上报、GC与数据加载机制原理">
+                      <a href="/2025/04/12/kafka%E6%B6%88%E8%B4%B9%E8%80%85/" title="kafka消费者">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">cachego分片、上报、GC与数据加载机制原理</span>
+                        <span class="hidden-mobile">kafka消费者</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
                   </article>
                   <article class="post-next col-6">
                     
+                    
+                      <a href="/2025/04/12/chat%E8%81%8A%E5%A4%A9%E7%B3%BB%E7%BB%9F%E6%80%9D%E8%80%83%E4%B9%8B%E4%BA%8C/" title="chat聊天系统思考之二">
+                        <span class="hidden-mobile">chat聊天系统思考之二</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
                     
                   </article>
                 </div>

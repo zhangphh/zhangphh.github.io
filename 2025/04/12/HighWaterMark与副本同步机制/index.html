@@ -20,26 +20,34 @@
   <meta name="author" content="zhangphh">
   <meta name="keywords" content="">
   
-    <meta name="description" content="1.环境搭建node、github相关环境搭建参照: 搭建Hexo个人博客详细教程 2.Hexo更换主题主题选用 Fluid，效果如下 2.1 Fluid安装参考Fluid文档: Fluid开始使用 推荐使用npm方式安装 2.2 Fluid配置指南参照文档: Fluid配置指南 3. Hexo创建文档及提交方式3.1 配置github仓库在本地所创建的项目里面找到 _congif.yml文件，找">
+    <meta name="description" content="0.11版本之前依赖于HW实现副本同步备份，0.11之后通过Leader epoch实现副本同步备份。 两个概念：  LEO：log end offset，日志末端位移，记录了该副本底层日志下一条消息应存放的位置。 HW，高水位值，小于等于HW的消息是被认为已经备份的。  [0, 7]的消息是已经完全备份，[8, 15)的数据为尚未完全备份的。 kafka中所有的副本都保有自己的HW值和LEO值，">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hexo+GitHub+阿里云域名解析搭建博客">
-<meta property="og:url" content="https://zhangphh-blogs.top/2024/11/16/Hexo-GitHub-%E9%98%BF%E9%87%8C%E4%BA%91%E5%9F%9F%E5%90%8D%E8%A7%A3%E6%9E%90%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/index.html">
+<meta property="og:title" content="HighWaterMark与副本同步机制">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/04/12/HighWaterMark%E4%B8%8E%E5%89%AF%E6%9C%AC%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6/index.html">
 <meta property="og:site_name" content="zhangphh">
-<meta property="og:description" content="1.环境搭建node、github相关环境搭建参照: 搭建Hexo个人博客详细教程 2.Hexo更换主题主题选用 Fluid，效果如下 2.1 Fluid安装参考Fluid文档: Fluid开始使用 推荐使用npm方式安装 2.2 Fluid配置指南参照文档: Fluid配置指南 3. Hexo创建文档及提交方式3.1 配置github仓库在本地所创建的项目里面找到 _congif.yml文件，找">
+<meta property="og:description" content="0.11版本之前依赖于HW实现副本同步备份，0.11之后通过Leader epoch实现副本同步备份。 两个概念：  LEO：log end offset，日志末端位移，记录了该副本底层日志下一条消息应存放的位置。 HW，高水位值，小于等于HW的消息是被认为已经备份的。  [0, 7]的消息是已经完全备份，[8, 15)的数据为尚未完全备份的。 kafka中所有的副本都保有自己的HW值和LEO值，">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img1.baidu.com/it/u=4109353140,439426862&fm=253&fmt=auto&app=138&f=JPEG?w=844&h=500">
-<meta property="article:published_time" content="2024-11-16T14:19:45.000Z">
-<meta property="article:modified_time" content="2024-11-16T15:19:37.004Z">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/81967a72a1b29543c125782cf7726a93.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/f4d5788ec0d46fdd4e37014fab0c8774.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/b62f8534d600a14918440cb1c530f288.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/05e32dff036cb45921ac76eba29d47ef.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/cf3ba65f9873bad0f7af39b723df6e9c.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/3a3ad359c94a3afcfda3b7999ae039f0.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/55b62c8f01eae9895e824f153a220ede.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/42e23e782194bf9fac4b94a667a5694b.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/d9674df658e29af294c4db5726d1259b.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/d6ab5858e323e58a10d99e5b9cdab2f3.png">
+<meta property="article:published_time" content="2025-04-12T06:36:09.000Z">
+<meta property="article:modified_time" content="2025-04-12T06:36:27.472Z">
 <meta property="article:author" content="zhangphh">
-<meta property="article:tag" content="Hexo">
-<meta property="article:tag" content="GitHub">
-<meta property="article:tag" content="阿里云">
+<meta property="article:tag" content="中间件">
+<meta property="article:tag" content="kafka">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://img1.baidu.com/it/u=4109353140,439426862&fm=253&fmt=auto&app=138&f=JPEG?w=844&h=500">
+<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/81967a72a1b29543c125782cf7726a93.png">
   
   
   
-  <title>Hexo+GitHub+阿里云域名解析搭建博客 - zhangphh</title>
+  <title>HighWaterMark与副本同步机制 - zhangphh</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -205,7 +213,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Hexo+GitHub+阿里云域名解析搭建博客"></span>
+            <span id="subtitle" data-typed-text="HighWaterMark与副本同步机制"></span>
           
         </div>
 
@@ -221,8 +229,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-11-16 22:19" pubdate>
-          2024年11月16日 晚上
+        <time datetime="2025-04-12 14:36" pubdate>
+          2025年4月12日 下午
         </time>
       </span>
     
@@ -233,7 +241,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          545 字
+          1.3k 字
         
       </span>
     
@@ -244,7 +252,7 @@
         
         
         
-          5 分钟
+          12 分钟
         
       </span>
     
@@ -281,27 +289,65 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Hexo+GitHub+阿里云域名解析搭建博客</h1>
+            <h1 id="seo-header">HighWaterMark与副本同步机制</h1>
             
             
               <div class="markdown-body">
                 
-                <h1 id="1-环境搭建"><a href="#1-环境搭建" class="headerlink" title="1.环境搭建"></a>1.环境搭建</h1><p>node、github相关环境搭建参照: <a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_44763569/article/details/106435118">搭建Hexo个人博客详细教程</a></p>
-<h1 id="2-Hexo更换主题"><a href="#2-Hexo更换主题" class="headerlink" title="2.Hexo更换主题"></a>2.Hexo更换主题</h1><p>主题选用 <a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/page/2/#board">Fluid</a>，效果如下<br><img src="https://i-blog.csdnimg.cn/direct/fb20f206a78b416591a2a54e4a89437c.png" srcset="/img/loading.gif" lazyload alt="Fluid主题首页效果图"></p>
-<h2 id="2-1-Fluid安装"><a href="#2-1-Fluid安装" class="headerlink" title="2.1 Fluid安装"></a>2.1 Fluid安装</h2><p>参考Fluid文档: <a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/docs/start/">Fluid开始使用</a></p>
-<p>推荐使用npm方式安装</p>
-<h2 id="2-2-Fluid配置指南"><a href="#2-2-Fluid配置指南" class="headerlink" title="2.2 Fluid配置指南"></a>2.2 Fluid配置指南</h2><p>参照文档: <a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/docs/guide/">Fluid配置指南</a></p>
-<h1 id="3-Hexo创建文档及提交方式"><a href="#3-Hexo创建文档及提交方式" class="headerlink" title="3. Hexo创建文档及提交方式"></a>3. Hexo创建文档及提交方式</h1><h2 id="3-1-配置github仓库"><a href="#3-1-配置github仓库" class="headerlink" title="3.1 配置github仓库"></a>3.1 配置github仓库</h2><p>在本地所创建的项目里面找到 _congif.yml文件，找到 deploy 字段，把以下代码放进去，填写第一步新建的仓库地址<br><img src="https://i-blog.csdnimg.cn/direct/b073575427764f1880fb4bdce527d1eb.png" srcset="/img/loading.gif" lazyload alt="配置github仓库"></p>
-<h2 id="3-2-安装推送工具"><a href="#3-2-安装推送工具" class="headerlink" title="3.2 安装推送工具"></a>3.2 安装推送工具</h2><p>用npm安装一个推送工具，将本地项目推到仓库上</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">npm install hexo-deployer-git --save<br></code></pre></td></tr></table></figure>
-<h2 id="3-3-创建文章及推送"><a href="#3-3-创建文章及推送" class="headerlink" title="3.3 创建文章及推送"></a>3.3 创建文章及推送</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">hexo new 测试文章 <span class="hljs-comment"># 1.创建新文章，&#x27;测试文章&#x27;为文件名，文章格式为markdown，新文章在source/_posts目录下</span><br>hexo clean <span class="hljs-comment"># 2.此命令用于清除缓存(非必须但建议执行)</span><br>hexo g <span class="hljs-comment"># 3.hexo generate简写，即生成静态文件</span><br>hexo deploy <span class="hljs-comment"># 4. 推送到github</span><br></code></pre></td></tr></table></figure>
-<p>注意: 只有推送到github后才能通过域名方式访问，否则只能在本地localhost:4000(<code>hexo server</code> 命令启动本地server)查看</p>
-<h1 id="4-域名绑定"><a href="#4-域名绑定" class="headerlink" title="4. 域名绑定"></a>4. 域名绑定</h1><h2 id="4-1-域名购买"><a href="#4-1-域名购买" class="headerlink" title="4.1 域名购买"></a>4.1 域名购买</h2><p>这里域名选择阿里云， 域名购买方式可自行百度</p>
-<h2 id="4-2-域名解析"><a href="#4-2-域名解析" class="headerlink" title="4.2 域名解析"></a>4.2 域名解析</h2><p>域名购买后需解析，解析步骤及绑定github参考: <a target="_blank" rel="noopener" href="https://www.cnblogs.com/yz0812/p/10392711.html">hexo绑定个人域名</a></p>
-<p>具体解析记录可参考下面阿里云域名解析记录截图:<br><img src="https://i-blog.csdnimg.cn/direct/ae01ca2a1ec04d35a93e250dd7d3f1fd.png" srcset="/img/loading.gif" lazyload alt="阿里云域名解析记录"></p>
-<h1 id="5-使用域名访问博客"><a href="#5-使用域名访问博客" class="headerlink" title="5.使用域名访问博客"></a>5.使用域名访问博客</h1><p>上述步骤完成后即可通过域名方式博客<br><img src="https://i-blog.csdnimg.cn/direct/017782a0711c4aa487a59ff2cb177d5c.png" srcset="/img/loading.gif" lazyload alt="使用域名访问博客"></p>
-<h1 id="6-其他问题"><a href="#6-其他问题" class="headerlink" title="6.其他问题"></a>6.其他问题</h1><h2 id="6-1-markdown图片失效问题"><a href="#6-1-markdown图片失效问题" class="headerlink" title="6.1 markdown图片失效问题"></a>6.1 markdown图片失效问题</h2><p>有种原因是图床存在防盗链，会报403禁止访问，此种问题解决方案可参考: <a target="_blank" rel="noopener" href="https://juejin.cn/post/7368276508136505407">外链图片不显示</a></p>
-<h2 id="6-2-GitHub配置自定义域名新推送失效问题"><a href="#6-2-GitHub配置自定义域名新推送失效问题" class="headerlink" title="6.2 GitHub配置自定义域名新推送失效问题"></a>6.2 GitHub配置自定义域名新推送失效问题</h2><p>域名绑定后已经能通过个人域名访问托管在github的博客了，但存在一个问题,就是每次hexo d重新部署后,配置的 GitHub Pages 自定义域名消失<br>解决方案也很简单就在<code>source</code> 目录下新建一个CNAME文件，将个人域名填进去即可，可参考: <a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2446582">为HEXO绑定自己的域名</a></p>
+                <p>0.11版本之前依赖于HW实现副本同步备份，0.11之后通过Leader epoch实现副本同步备份。</p>
+<p>两个概念：</p>
+<ul>
+<li>LEO：log end offset，日志末端位移，记录了该副本底层日志下一条消息应存放的位置。</li>
+<li>HW，高水位值，小于等于HW的消息是被认为已经备份的。</li>
+</ul>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/81967a72a1b29543c125782cf7726a93.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>[0, 7]的消息是已经完全备份，[8, 15)的数据为尚未完全备份的。</p>
+<p>kafka中所有的副本都保有自己的HW值和LEO值，但leader副本中还保存有其他副本的HW值和LEO值，如下图：<br><img src="https://i-blog.csdnimg.cn/blog_migrate/f4d5788ec0d46fdd4e37014fab0c8774.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>leader中保存的副本的HW值和LEO值得作用是用来更新leader副本的HW值。</p>
+<h3 id="1、更新HW值的时机"><a href="#1、更新HW值的时机" class="headerlink" title="1、更新HW值的时机"></a>1、更新HW值的时机</h3><ul>
+<li>follower副本：follower副本会在更新LEO值之后尝试更新HW值。</li>
+<li>leader副本：<ul>
+<li>当某个follower副本成为leader副本时；</li>
+<li>broker崩溃导致副本被踢出ISR</li>
+<li>producer向leader副本写消息时，由于LEO会被更改，因此会检查下HW是否需要更新；</li>
+<li>leader处理follower的fetch请求时，首先会从log取数据，然后会尝试更新HW值</li>
+</ul>
+</li>
+</ul>
+<h4 id="1-1、leader副本更新HW"><a href="#1-1、leader副本更新HW" class="headerlink" title="1.1、leader副本更新HW"></a>1.1、leader副本更新HW</h4><p>处理生产者请求的逻辑：</p>
+<ul>
+<li>写入消息到本次磁盘</li>
+<li>更新分区高水位<ul>
+<li>获取leader副本所在broker端保存的所有远程副本LEO值(LEO-0, LEO-1,… … LEO-n)</li>
+<li>获取leader副本高水位值，currentHW</li>
+<li>更新currentHW&#x3D;max{currentHW，min(LEO-1,LEO-2,…..,LEO-n)}</li>
+</ul>
+</li>
+</ul>
+<p>处理follower副本拉取消息的处理逻辑：</p>
+<ul>
+<li>读取磁盘或页缓存中的数据</li>
+<li>使用follower副本发送请求中位移值更新leader副本LEO值</li>
+<li>更新分区高水位值，具体步骤与处理生产者请求的步骤相同</li>
+</ul>
+<h4 id="1-2、follower副本更新HW"><a href="#1-2、follower副本更新HW" class="headerlink" title="1.2、follower副本更新HW"></a>1.2、follower副本更新HW</h4><ul>
+<li>写入消息到log文件</li>
+<li>更新LEO值</li>
+<li>更新高水位<ul>
+<li>获取leader的高水位值：currentHW</li>
+<li>获取步骤2刚才更新的LEO值，currentLEO</li>
+<li>更新高水位值，min(currnetHW，currentLEO)</li>
+</ul>
+</li>
+</ul>
+<h3 id="2、副本同步机制"><a href="#2、副本同步机制" class="headerlink" title="2、副本同步机制"></a>2、副本同步机制</h3><p>当生产者生产一条消息，leader和follower副本高水位更新如下：<br>初始状态时，所有的值都为0<br><img src="https://i-blog.csdnimg.cn/blog_migrate/b62f8534d600a14918440cb1c530f288.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>生产者发送一条消息后<br><img src="https://i-blog.csdnimg.cn/blog_migrate/05e32dff036cb45921ac76eba29d47ef.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>当leader副本将消息写入磁盘后LEO值变为1<br>follower再次从leader拉取消息，有消息拉取到，则状态进一步更新<br><img src="https://i-blog.csdnimg.cn/blog_migrate/cf3ba65f9873bad0f7af39b723df6e9c.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>可以看到此时的副本LEO也被更新为1，但是leader副本和follower副本的HW仍然没有更新，这会在下一次follower的fetch请求时更新。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/3a3ad359c94a3afcfda3b7999ae039f0.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>在新一轮的拉取中，由于位移值时0的消息已经拉取成功，则本次拉取会拉去位移值为1的消息，leader副本接收到请求后，会将remote LEO值更新为1，然后更新HW值为1，将更新后的HW值发送到follower，follower将HW值更新为1，致辞一个完整的同步过程完成。</p>
+<p>上述的拉取流程可以看到kafka使用HW来决定副本备份的进度，而HW值的更新需要新一轮的Fetch请求才能实现，这种设计是有问题的，可能会引起备份数据丢失和备份数据不一致的问题。</p>
+<h3 id="3、Leader-epoch"><a href="#3、Leader-epoch" class="headerlink" title="3、Leader epoch"></a>3、Leader epoch</h3><p><strong>备份数据丢失的问题</strong><br><img src="https://i-blog.csdnimg.cn/blog_migrate/55b62c8f01eae9895e824f153a220ede.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>当生产者发送两条消息leader副本都完成落盘，而且follower副本B的HW已经更新为1，在第二条消息的同步时，fetch请求的响应失败，则B的HW就不会被更新到2，如果此时B重启，则B在重启后会重新加载之前的HW值，也就是1，此时副本B会做日志截断把2的消息删除，并调整LEO为1。<br>B会向A的leader副本发出同步消息的fetch请求，如果此时A恰好宕机，则B升级为leader，而当A重启回来后也会执行日志截断，将HW调整回1与B相同。这样，位移&#x3D;1的消息就从两个副本的log中被删除，即永远地丢失了。</p>
+<p> <strong>备份数据不一致问题</strong></p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/42e23e782194bf9fac4b94a667a5694b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>A为leader，B为follower，B的HW只更新到1，此时A、B同事宕机，但是B先恢复，此时B为leader，在A恢复之前又向B写入了新的消息2，此时B的HW为2，此时A恢复，A的HW与B的HW相等，不会出现日志截断，之后会正常的执行下去，但是副本A与leader副本B数据存在不一致的地方。</p>
+<p>针对上述的两个问题，kafka 0.11版本对此进行了优化，采用leader epoch技术来解决上述问题。</p>
+<p>epoch，单调递增的版本号，每当副本领导权发生改变时都会增加该版本号，小版本号的leader被认为是过期的leader，不能再行使leader的权力。它其实是一对值，即(epoch, offset)，offset为该epoch版本对应的leader写入的第一条消息的位移。<br>(0, 0)<br>(1, 120)<br>则表示第一个leader从位移0开始写入消息；共写了120条[0, 119]；而第二个leader版本号是1，从位移120处开始写入消息.</p>
+<p>​​leader broker中会保存这样的一个缓存，并定期地写入到一个checkpoint文件中。</p>
+<p>当leader写底层log时它会尝试更新整个缓存——如果这个leader首次写消息，则会在缓存中增加一个条目；否则就不做更新。而每次副本重新成为leader时会查询这部分缓存，获取出对应leader版本的位移，这就不会发生数据不一致和丢失的情况。<br><img src="https://i-blog.csdnimg.cn/blog_migrate/d9674df658e29af294c4db5726d1259b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://i-blog.csdnimg.cn/blog_migrate/d6ab5858e323e58a10d99e5b9cdab2f3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 
                 
               </div>
@@ -320,7 +366,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E9%80%A0%E8%BD%AE%E5%AD%90-%E5%B7%A5%E5%85%B7%E7%AF%87/" class="category-chain-item">造轮子-工具篇</a>
+  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">学习笔记</a>
   
   
 
@@ -335,11 +381,9 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Hexo/" class="print-no-link">#Hexo</a>
+        <a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="print-no-link">#中间件</a>
       
-        <a href="/tags/GitHub/" class="print-no-link">#GitHub</a>
-      
-        <a href="/tags/%E9%98%BF%E9%87%8C%E4%BA%91/" class="print-no-link">#阿里云</a>
+        <a href="/tags/kafka/" class="print-no-link">#kafka</a>
       
     </div>
   
@@ -353,15 +397,15 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2025/04/12/cachego%E5%88%86%E7%89%87%E3%80%81%E4%B8%8A%E6%8A%A5%E3%80%81GC%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6%E5%8E%9F%E7%90%86/" title="cachego分片、上报、GC与数据加载机制原理">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">cachego分片、上报、GC与数据加载机制原理</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
+                    
+                      <a href="/2025/04/12/kafka%E6%97%A5%E5%BF%97%E5%AD%98%E5%82%A8/" title="kafka日志存储">
+                        <span class="hidden-mobile">kafka日志存储</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
                     
                   </article>
                 </div>

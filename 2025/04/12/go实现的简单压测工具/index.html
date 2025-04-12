@@ -1,0 +1,655 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta name="referrer" content="no-referrer"/>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zhangphh">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="1、参数概览依赖github.com&#x2F;ddliu&#x2F;go-httpclient进行http接口请求依赖github.com&#x2F;antlabs&#x2F;pcurl解析curl 输入参数：  -c，concurrency，并发数，启动协程数 -n， totalNumber，单个协程发送的请求个数 -u，curl字符串 -p，如果不使用-u，可以将curl地址放在文件中，使用-p传入curl文件地址 -e，expe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go实现的简单压测工具">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/04/12/go%E5%AE%9E%E7%8E%B0%E7%9A%84%E7%AE%80%E5%8D%95%E5%8E%8B%E6%B5%8B%E5%B7%A5%E5%85%B7/index.html">
+<meta property="og:site_name" content="zhangphh">
+<meta property="og:description" content="1、参数概览依赖github.com&#x2F;ddliu&#x2F;go-httpclient进行http接口请求依赖github.com&#x2F;antlabs&#x2F;pcurl解析curl 输入参数：  -c，concurrency，并发数，启动协程数 -n， totalNumber，单个协程发送的请求个数 -u，curl字符串 -p，如果不使用-u，可以将curl地址放在文件中，使用-p传入curl文件地址 -e，expe">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/5d091430a9c4763253d430f4bda16954.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/76c18a39ccdf0c9d0d6484056ad910b7.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/72cfecb04da708cb4c29d3d289228bc4.png">
+<meta property="article:published_time" content="2025-04-12T06:16:12.000Z">
+<meta property="article:modified_time" content="2025-04-12T06:19:03.310Z">
+<meta property="article:author" content="zhangphh">
+<meta property="article:tag" content="Go">
+<meta property="article:tag" content="压测">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/5d091430a9c4763253d430f4bda16954.png">
+  
+  
+  
+  <title>go实现的简单压测工具 - zhangphh</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"zhangphh-blogs.top","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>zhangphh的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="go实现的简单压测工具"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        zhangphh
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-04-12 14:16" pubdate>
+          2025年4月12日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">go实现的简单压测工具</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h3 id="1、参数概览"><a href="#1、参数概览" class="headerlink" title="1、参数概览"></a>1、参数概览</h3><p>依赖<code>github.com/ddliu/go-httpclient</code>进行http接口请求<br>依赖<code>github.com/antlabs/pcurl</code>解析curl</p>
+<p>输入参数：</p>
+<ul>
+<li>-c，concurrency，并发数，启动协程数</li>
+<li>-n， totalNumber，单个协程发送的请求个数</li>
+<li>-u，curl字符串</li>
+<li>-p，如果不使用-u，可以将curl地址放在文件中，使用-p传入curl文件地址</li>
+<li>-e，expectCode，期望response返回的状态码</li>
+</ul>
+<h3 id="2、核心代码"><a href="#2、核心代码" class="headerlink" title="2、核心代码"></a>2、核心代码</h3><h4 id="1、网络请求server-dispose-go"><a href="#1、网络请求server-dispose-go" class="headerlink" title="1、网络请求server&#x2F;dispose.go"></a>1、网络请求server&#x2F;dispose.go</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">init</span><span class="hljs-params">()</span></span> &#123;<br>	<span class="hljs-comment">// 注册verify校验器</span><br>	verify.RegisterVerifyHttp(verify.GetVerifyKey(<span class="hljs-string">&quot;statusCode&quot;</span>), verify.VerifyHttpByStatusCode)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Dispose</span><span class="hljs-params">(ctx context.Context, req *request.Request, concurrency, totalNumber <span class="hljs-type">uint64</span>)</span></span> &#123;<br>	ch := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> *response.ResponseResult, <span class="hljs-number">1000</span>)<br>	wg := sync.WaitGroup&#123;&#125;<br>	wgReceiving := sync.WaitGroup&#123;&#125;<br><br>	wgReceiving.Add(<span class="hljs-number">1</span>)<br><br>    <span class="hljs-comment">// 统计数据详情</span><br>	<span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>		<span class="hljs-keyword">defer</span> wgReceiving.Done()<br>		statistics.HandleStatics(concurrency, ch)<br>	&#125;()<br><br>	<span class="hljs-comment">// 传递的-c参数，为每个协程创建-n次请求</span><br>	<span class="hljs-keyword">for</span> i := <span class="hljs-type">uint64</span>(<span class="hljs-number">0</span>); i &lt; concurrency; i++ &#123;<br>		wg.Add(<span class="hljs-number">1</span>)<br>		chanId := i<br><br>		<span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>			<span class="hljs-keyword">defer</span> wg.Done()<br>			serveHTTP(ctx, chanId, totalNumber, ch, req)<br>		&#125;()<br>	&#125;<br><br>	wg.Wait()<br>	time.Sleep(time.Millisecond)<br>	<span class="hljs-built_in">close</span>(ch)<br>	wgReceiving.Wait()<br>&#125;<br><br><span class="hljs-comment">// 真正发送请求的方法</span><br><span class="hljs-comment">// chanId 每个协程的身份Id</span><br><span class="hljs-comment">// ch 用于接受http接口响应数据</span><br><span class="hljs-comment">// req 根据curl解析出来的request结构体</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">serveHTTP</span><span class="hljs-params">(ctx context.Context, chanId, totalNumber <span class="hljs-type">uint64</span>, ch <span class="hljs-keyword">chan</span>&lt;- *response.ResponseResult, req *request.Request)</span></span> &#123;<br>	<span class="hljs-keyword">for</span> i := <span class="hljs-type">uint64</span>(<span class="hljs-number">0</span>); i &lt; totalNumber; i++ &#123;<br>		<span class="hljs-keyword">if</span> ctx.Err() != <span class="hljs-literal">nil</span> &#123;<br>			fmt.Printf(<span class="hljs-string">&quot;ctx.Err err: %v \n&quot;</span>, ctx.Err())<br>			<span class="hljs-keyword">break</span><br>		&#125;<br>		header := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">string</span>)<br>		<span class="hljs-keyword">for</span> k := <span class="hljs-keyword">range</span> req.Header &#123;<br>			header[k] = req.Header.Get(k)<br>		&#125;<br><br>		respStatusCode := constants.Success<br>		isSucceed := <span class="hljs-literal">false</span><br><br>		start := time.Now()<br>		resp, err := httpclient.Do(req.Method, req.URL.String(), header, <span class="hljs-literal">nil</span>)<br>		cost := <span class="hljs-type">uint64</span>(time.Since(start).Nanoseconds()) <span class="hljs-comment">//统计耗时</span><br>		<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> || resp == <span class="hljs-literal">nil</span> &#123;<br>			respStatusCode = constants.RequestFailed<br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>		    <span class="hljs-comment">// 校验response code与-e是否相同</span><br>			respStatusCode, isSucceed = verify.GetVerify(verify.GetVerifyKey(<span class="hljs-string">&quot;statusCode&quot;</span>))(req, resp)<br>		&#125;<br><br>		result := &amp;response.ResponseResult&#123;<br>			Id:         fmt.Sprintf(<span class="hljs-string">&quot;%d-%d&quot;</span>, chanId, i),<br>			ChanId:     chanId,<br>			Cost:       cost,<br>			IsSucceed:  isSucceed,<br>			StatusCode: respStatusCode,<br>		&#125;<br>		<span class="hljs-comment">// 写数据</span><br>		ch &lt;- result<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="2、校验器verify-verify-go"><a href="#2、校验器verify-verify-go" class="headerlink" title="2、校验器verify&#x2F;verify.go"></a>2、校验器verify&#x2F;verify.go</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Verify <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*request.Request, *httpclient.Response)</span></span> (constants.ErrCode, <span class="hljs-type">bool</span>)<br><br><span class="hljs-keyword">var</span> (<br>	verifyMap = <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]Verify)<br>	mutex     sync.RWMutex<br>)<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">RegisterVerifyHttp</span><span class="hljs-params">(key <span class="hljs-type">string</span>, verifyFunc Verify)</span></span> &#123;<br>	mutex.Lock()<br>	<span class="hljs-keyword">defer</span> mutex.Unlock()<br>	verifyMap[key] = verifyFunc<br>&#125;<br><br><span class="hljs-comment">// request 解析curl所得</span><br><span class="hljs-comment">// response http请求结果</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">VerifyHttpByStatusCode</span><span class="hljs-params">(request *request.Request, response *httpclient.Response)</span></span> (constants.ErrCode, <span class="hljs-type">bool</span>) &#123;<br>	responseCode := response.StatusCode<br>	<span class="hljs-keyword">if</span> responseCode == request.ExpectedCode &#123;<br>		<span class="hljs-keyword">return</span> constants.ErrCode(responseCode), <span class="hljs-literal">true</span><br>	&#125;<br>	<span class="hljs-keyword">return</span> constants.ErrCode(responseCode), <span class="hljs-literal">false</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">GetVerifyKey</span><span class="hljs-params">(t <span class="hljs-type">string</span>)</span></span> <span class="hljs-type">string</span> &#123;<br>	<span class="hljs-keyword">return</span> fmt.Sprintf(<span class="hljs-string">&quot;http.%s&quot;</span>, t)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">GetVerify</span><span class="hljs-params">(key <span class="hljs-type">string</span>)</span></span> Verify &#123;<br>	verify, ok := verifyMap[key]<br>	<span class="hljs-keyword">if</span> !ok &#123;<br>		<span class="hljs-built_in">panic</span>(<span class="hljs-string">&quot;verify方法不存在&quot;</span>)<br>	&#125;<br>	<span class="hljs-keyword">return</span> verify<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="3、解析curl-request-request-go"><a href="#3、解析curl-request-request-go" class="headerlink" title="3、解析curl  request&#x2F;request.go"></a>3、解析curl  request&#x2F;request.go</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Request <span class="hljs-keyword">struct</span> &#123;<br>	*http.Request<br>	ExpectedCode <span class="hljs-type">int</span> <span class="hljs-comment">//-e参数输入</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewRequest</span><span class="hljs-params">(curl, path <span class="hljs-type">string</span>, expectedCode <span class="hljs-type">int</span>)</span></span> (*Request, <span class="hljs-type">error</span>) &#123;<br>	<span class="hljs-comment">// 优先使用文件解析curl</span><br>	<span class="hljs-keyword">if</span> path != <span class="hljs-string">&quot;&quot;</span> &#123;<br>		file, err := os.Open(path)<br>		<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>			fmt.Printf(<span class="hljs-string">&quot;open curl file %s failed, err: %+v\n&quot;</span>, path, err)<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>		&#125;<br>		<span class="hljs-keyword">defer</span> file.Close()<br><br>		buf, err := io.ReadAll(file)<br>		<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>			fmt.Printf(<span class="hljs-string">&quot;read curl file %s failed, err: %+v\n&quot;</span>, path, err)<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>		&#125;<br>		curl = <span class="hljs-type">string</span>(buf)<br>	&#125;<br><br>	req, err := pcurl.ParseAndRequest(curl)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		fmt.Printf(<span class="hljs-string">&quot;parse curl file %s failed, err: %+v\n&quot;</span>, path, err)<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>	&#125;<br>	<span class="hljs-keyword">return</span> &amp;Request&#123;<br>		Request:      req,<br>		ExpectedCode: expectedCode,<br>	&#125;, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<h4 id="4、数据统计statstics-statistics-go"><a href="#4、数据统计statstics-statistics-go" class="headerlink" title="4、数据统计statstics&#x2F;statistics.go"></a>4、数据统计statstics&#x2F;statistics.go</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// HandleStatics 所有耗时变量均为纳秒</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">HandleStatics</span><span class="hljs-params">(concurrency <span class="hljs-type">uint64</span>, ch &lt;-<span class="hljs-keyword">chan</span> *response.ResponseResult)</span></span> &#123;<br>	<span class="hljs-keyword">var</span> (<br>		requestCostTimeList []<span class="hljs-type">uint64</span>     <span class="hljs-comment">// 耗时数组</span><br>		processingTime      <span class="hljs-type">uint64</span>   = <span class="hljs-number">0</span> <span class="hljs-comment">// processingTime 处理总耗时</span><br>		requestCostTime     <span class="hljs-type">uint64</span>   = <span class="hljs-number">0</span> <span class="hljs-comment">// requestCostTime 请求总时间</span><br>		maxTime             <span class="hljs-type">uint64</span>   = <span class="hljs-number">0</span> <span class="hljs-comment">// maxTime 至今为止单个请求最大耗时</span><br>		minTime             <span class="hljs-type">uint64</span>   = <span class="hljs-number">0</span> <span class="hljs-comment">// minTime 至今为止单个请求最小耗时</span><br>		successNum          <span class="hljs-type">uint64</span>   = <span class="hljs-number">0</span><br>		failureNum          <span class="hljs-type">uint64</span>   = <span class="hljs-number">0</span><br>		chanIdLen           <span class="hljs-type">uint64</span>   = <span class="hljs-number">0</span> <span class="hljs-comment">// chanIdLen 并发数</span><br>		stopChan                     = <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> <span class="hljs-type">bool</span>)<br>		mutex                        = sync.RWMutex&#123;&#125;<br>		chanIds                      = <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[<span class="hljs-type">int</span>]<span class="hljs-type">bool</span>)<br>	)<br><br>	startTime := <span class="hljs-type">uint64</span>(time.Now().UnixNano())<br>	respCodeMap := sync.Map&#123;&#125;<br>	ticker := time.NewTicker(time.Second)<br>	<span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>		<span class="hljs-keyword">for</span> &#123;<br>			<span class="hljs-keyword">select</span> &#123;<br>			<span class="hljs-keyword">case</span> &lt;-ticker.C:<br>				endTime := <span class="hljs-type">uint64</span>(time.Now().UnixNano())<br>				mutex.Lock()<br>				<span class="hljs-keyword">go</span> calculateData(concurrency, processingTime, endTime-startTime, maxTime, minTime, successNum, failureNum, chanIdLen, &amp;respCodeMap)<br>				mutex.Unlock()<br>			<span class="hljs-keyword">case</span> &lt;-stopChan:<br>				<span class="hljs-keyword">return</span><br>			&#125;<br>		&#125;<br>	&#125;()<br>	printHeader()<br>	<span class="hljs-keyword">for</span> respRes := <span class="hljs-keyword">range</span> ch &#123;<br>		mutex.Lock()<br>		processingTime = processingTime + respRes.Cost<br>		<span class="hljs-keyword">if</span> maxTime &lt;= respRes.Cost &#123;<br>			maxTime = respRes.Cost<br>		&#125;<br>		<span class="hljs-keyword">if</span> minTime == <span class="hljs-number">0</span> &#123;<br>			minTime = respRes.Cost<br>		&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> minTime &gt; respRes.Cost &#123;<br>			minTime = respRes.Cost<br>		&#125;<br>		<span class="hljs-keyword">if</span> respRes.IsSucceed &#123;<br>			successNum = successNum + <span class="hljs-number">1</span><br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>			failureNum = failureNum + <span class="hljs-number">1</span><br>		&#125;<br><br>		<span class="hljs-comment">// 统计response状态码</span><br>		<span class="hljs-keyword">if</span> value, ok := respCodeMap.Load(respRes.StatusCode); ok &#123;<br>			total, _ := value.(<span class="hljs-type">int</span>)<br>			respCodeMap.Store(respRes.StatusCode, total+<span class="hljs-number">1</span>)<br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>			respCodeMap.Store(respRes.StatusCode, <span class="hljs-number">1</span>)<br>		&#125;<br><br>		<span class="hljs-comment">// 统计并发数</span><br>		<span class="hljs-keyword">if</span> _, ok := chanIds[<span class="hljs-type">int</span>(respRes.ChanId)]; !ok &#123;<br>			chanIds[<span class="hljs-type">int</span>(respRes.ChanId)] = <span class="hljs-literal">true</span><br>			chanIdLen = <span class="hljs-type">uint64</span>(<span class="hljs-built_in">len</span>(chanIds))<br>		&#125;<br>		requestCostTimeList = <span class="hljs-built_in">append</span>(requestCostTimeList, respRes.Cost)<br>		mutex.Unlock()<br>	&#125;<br>	<span class="hljs-comment">// 数据全部接受完成，停止定时输出统计数据</span><br>	stopChan &lt;- <span class="hljs-literal">true</span><br>	endTime := <span class="hljs-type">uint64</span>(time.Now().UnixNano())<br>	requestCostTime = endTime - startTime<br>	calculateData(concurrency, processingTime, requestCostTime, maxTime, minTime, successNum, failureNum, chanIdLen, &amp;respCodeMap)<br><br>	fmt.Printf(<span class="hljs-string">&quot;\n\n&quot;</span>)<br>	fmt.Println(<span class="hljs-string">&quot;*************************  结果 stat  ****************************&quot;</span>)<br>	fmt.Println(<span class="hljs-string">&quot;处理协程数量:&quot;</span>, concurrency)<br>	fmt.Println(<span class="hljs-string">&quot;请求总数（并发数*请求数 -c * -n）:&quot;</span>, successNum+failureNum, <span class="hljs-string">&quot;总请求时间:&quot;</span>,<br>		fmt.Sprintf(<span class="hljs-string">&quot;%.3f&quot;</span>, <span class="hljs-type">float64</span>(requestCostTime)/<span class="hljs-number">1e9</span>),<br>		<span class="hljs-string">&quot;秒&quot;</span>, <span class="hljs-string">&quot;successNum:&quot;</span>, successNum, <span class="hljs-string">&quot;failureNum:&quot;</span>, failureNum)<br>	printTop(requestCostTimeList)<br>	fmt.Println(<span class="hljs-string">&quot;*************************  结果 end   ****************************&quot;</span>)<br>	fmt.Printf(<span class="hljs-string">&quot;\n\n&quot;</span>)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">calculateData</span><span class="hljs-params">(concurrent, processingTime, costTime, maxTime, minTime, successNum, failureNum, chanIdLen <span class="hljs-type">uint64</span>, respCodeMap *sync.Map)</span></span> &#123;<br>	<span class="hljs-keyword">if</span> processingTime == <span class="hljs-number">0</span> || chanIdLen == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">return</span><br>	&#125;<br><br>	<span class="hljs-keyword">var</span> qps, averageTime, maxTimeFloat, minTimeFloat, requestCostTimeFloat <span class="hljs-type">float64</span><br><br>	<span class="hljs-comment">// 平均 QPS 成功数*总协程数/总耗时 (每秒)</span><br>	qps = <span class="hljs-type">float64</span>(successNum*<span class="hljs-number">1e9</span>*concurrent) / <span class="hljs-type">float64</span>(processingTime)<br><br>	<span class="hljs-comment">// 平均耗时 总耗时/总请求数/并发数 纳秒=&gt;毫秒</span><br>	<span class="hljs-keyword">if</span> successNum != <span class="hljs-number">0</span> &amp;&amp; concurrent != <span class="hljs-number">0</span> &#123;<br>		averageTime = <span class="hljs-type">float64</span>(processingTime) / <span class="hljs-type">float64</span>(successNum*<span class="hljs-number">1e6</span>)<br>	&#125;<br>	maxTimeFloat = <span class="hljs-type">float64</span>(maxTime) / <span class="hljs-number">1e6</span><br>	minTimeFloat = <span class="hljs-type">float64</span>(minTime) / <span class="hljs-number">1e6</span><br>	requestCostTimeFloat = <span class="hljs-type">float64</span>(costTime) / <span class="hljs-number">1e9</span><br><br>	result := fmt.Sprintf(<span class="hljs-string">&quot;%4.0fs│%7d│%7d│%7d│%8.2f│%11.2f│%11.2f│%11.2f│%v&quot;</span>,<br>		requestCostTimeFloat, chanIdLen, successNum, failureNum, qps, maxTimeFloat, minTimeFloat, averageTime, printMap(respCodeMap))<br>	fmt.Println(result)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">printHeader</span><span class="hljs-params">()</span></span> &#123;<br>	fmt.Printf(<span class="hljs-string">&quot;\n\n&quot;</span>)<br>	fmt.Println(<span class="hljs-string">&quot;─────┬───────┬───────┬───────┬────────┬───────────┬───────────┬───────────┬────────&quot;</span>)<br>	fmt.Println(<span class="hljs-string">&quot; 耗时│ 并发数│ 成功数│ 失败数│   qps  │最长耗时/ms│最短耗时/ms│平均耗时/ms│ 状态码&quot;</span>)<br>	fmt.Println(<span class="hljs-string">&quot;─────┼───────┼───────┼───────┼────────┼───────────┼───────────┼───────────┼────────&quot;</span>)<br>	<span class="hljs-keyword">return</span><br>&#125;<br><br><span class="hljs-comment">// 打印响应状态码及数量, 如 200:5</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">printMap</span><span class="hljs-params">(respCodeMap *sync.Map)</span></span> (mapStr <span class="hljs-type">string</span>) &#123;<br>	<span class="hljs-keyword">var</span> mapArr []<span class="hljs-type">string</span><br><br>	respCodeMap.Range(<span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(key, value <span class="hljs-keyword">interface</span>&#123;&#125;)</span></span> <span class="hljs-type">bool</span> &#123;<br>		mapArr = <span class="hljs-built_in">append</span>(mapArr, fmt.Sprintf(<span class="hljs-string">&quot;%v:%v&quot;</span>, key, value))<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span><br>	&#125;)<br>	sort.Strings(mapArr)<br>	mapStr = strings.Join(mapArr, <span class="hljs-string">&quot;;&quot;</span>)<br>	<span class="hljs-keyword">return</span><br>&#125;<br><br><span class="hljs-comment">// printTop 排序后计算 top 90 95 99</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">printTop</span><span class="hljs-params">(requestCostTimeList []<span class="hljs-type">uint64</span>)</span></span> &#123;<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(requestCostTimeList) == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">return</span><br>	&#125;<br>	all := uint64Array&#123;&#125;<br>	all = requestCostTimeList<br>	sort.Sort(all)<br>	fmt.Println(<span class="hljs-string">&quot;tp90:&quot;</span>, fmt.Sprintf(<span class="hljs-string">&quot;%.3fms&quot;</span>, <span class="hljs-type">float64</span>(all[<span class="hljs-type">int</span>(<span class="hljs-type">float64</span>(<span class="hljs-built_in">len</span>(all))*<span class="hljs-number">0.90</span>)]/<span class="hljs-number">1e6</span>)))<br>	fmt.Println(<span class="hljs-string">&quot;tp95:&quot;</span>, fmt.Sprintf(<span class="hljs-string">&quot;%.3fms&quot;</span>, <span class="hljs-type">float64</span>(all[<span class="hljs-type">int</span>(<span class="hljs-type">float64</span>(<span class="hljs-built_in">len</span>(all))*<span class="hljs-number">0.95</span>)]/<span class="hljs-number">1e6</span>)))<br>	fmt.Println(<span class="hljs-string">&quot;tp99:&quot;</span>, fmt.Sprintf(<span class="hljs-string">&quot;%.3fms&quot;</span>, <span class="hljs-type">float64</span>(all[<span class="hljs-type">int</span>(<span class="hljs-type">float64</span>(<span class="hljs-built_in">len</span>(all))*<span class="hljs-number">0.99</span>)]/<span class="hljs-number">1e6</span>)))<br>&#125;<br><br><span class="hljs-keyword">type</span> uint64Array []<span class="hljs-type">uint64</span><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(array uint64Array)</span></span> Len() <span class="hljs-type">int</span>           &#123; <span class="hljs-keyword">return</span> <span class="hljs-built_in">len</span>(array) &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(array uint64Array)</span></span> Swap(i, j <span class="hljs-type">int</span>)      &#123; array[i], array[j] = array[j], array[i] &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(array uint64Array)</span></span> Less(i, j <span class="hljs-type">int</span>) <span class="hljs-type">bool</span> &#123; <span class="hljs-keyword">return</span> array[i] &lt; array[j] &#125;<br></code></pre></td></tr></table></figure>
+<h4 id="5、main-go"><a href="#5、main-go" class="headerlink" title="5、main.go"></a>5、main.go</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> (<br>	concurrency  <span class="hljs-type">uint64</span> = <span class="hljs-number">1</span> <span class="hljs-comment">// 并发数</span><br>	totalNumber  <span class="hljs-type">uint64</span> = <span class="hljs-number">1</span> <span class="hljs-comment">// 请求个数</span><br>	curl                = <span class="hljs-string">&quot;&quot;</span><br>	curlPath            = <span class="hljs-string">&quot;&quot;</span> <span class="hljs-comment">// curl文件路径</span><br>	expectedCode        = <span class="hljs-number">200</span><br>)<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">init</span><span class="hljs-params">()</span></span> &#123;<br>	flag.Uint64Var(&amp;concurrency, <span class="hljs-string">&quot;c&quot;</span>, concurrency, <span class="hljs-string">&quot;并发数&quot;</span>)<br>	flag.Uint64Var(&amp;totalNumber, <span class="hljs-string">&quot;n&quot;</span>, totalNumber, <span class="hljs-string">&quot;请求数(单个并发)&quot;</span>)<br>	flag.StringVar(&amp;curl, <span class="hljs-string">&quot;u&quot;</span>, curl, <span class="hljs-string">&quot;压测地址&quot;</span>)<br>	flag.StringVar(&amp;curlPath, <span class="hljs-string">&quot;p&quot;</span>, curlPath, <span class="hljs-string">&quot;curl文件地址&quot;</span>)<br>	flag.IntVar(&amp;expectedCode, <span class="hljs-string">&quot;e&quot;</span>, expectedCode, <span class="hljs-string">&quot;期望请求结果的状态码&quot;</span>)<br><br>	flag.Parse()<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	runtime.GOMAXPROCS(getCPUNum())<br><br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(curl) == <span class="hljs-number">0</span> &amp;&amp; <span class="hljs-built_in">len</span>(curlPath) == <span class="hljs-number">0</span> &#123;<br>		fmt.Printf(<span class="hljs-string">&quot;示例: go run main.go -c 1 -n 1 -u https://www.baidu.com/ \n&quot;</span>)<br>		<span class="hljs-keyword">return</span><br>	&#125;<br><br>	req, err := request.NewRequest(curl, curlPath, expectedCode)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		fmt.Println(err)<br>		<span class="hljs-keyword">return</span><br>	&#125;<br>	ctx := context.Background()<br>	server.Dispose(ctx, req, concurrency, totalNumber)<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">getCPUNum</span><span class="hljs-params">()</span></span> <span class="hljs-type">int</span> &#123;<br>	<span class="hljs-keyword">if</span> runtime.NumCPU()/<span class="hljs-number">4</span> &lt; <span class="hljs-number">1</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-number">1</span><br>	&#125;<br>	<span class="hljs-keyword">return</span> runtime.NumCPU() / <span class="hljs-number">4</span><br>&#125;<br><br></code></pre></td></tr></table></figure>
+<h3 id="3、验证猜想"><a href="#3、验证猜想" class="headerlink" title="3、验证猜想"></a>3、验证猜想</h3><ul>
+<li>启动<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">go</span> run main.<span class="hljs-keyword">go</span> -c <span class="hljs-number">1000</span> -n <span class="hljs-number">5000</span> -p D:\<span class="hljs-keyword">go</span>\<span class="hljs-keyword">go</span>-demo\gostress\test-stress.curl <br></code></pre></td></tr></table></figure></li>
+<li>qps、耗时等统计如下<br><img src="https://i-blog.csdnimg.cn/blog_migrate/5d091430a9c4763253d430f4bda16954.png" srcset="/img/loading.gif" lazyload alt="qps"><br><img src="https://i-blog.csdnimg.cn/blog_migrate/76c18a39ccdf0c9d0d6484056ad910b7.png" srcset="/img/loading.gif" lazyload alt="耗时"></li>
+</ul>
+<p>为验证工具统计正确性，配置prometheus进行对照<br><img src="https://i-blog.csdnimg.cn/blog_migrate/72cfecb04da708cb4c29d3d289228bc4.png" srcset="/img/loading.gif" lazyload alt="普罗米修斯监控指标"><br>可以看到prometheus在http server端统计到的数据qps、tp99、tp90、tp95基本上是符合的，由此验证工具正确性</p>
+<h3 id="4、工具http接口-监控"><a href="#4、工具http接口-监控" class="headerlink" title="4、工具http接口&amp;监控"></a>4、工具http接口&amp;监控</h3><h4 id="1、server端监控代码monitor-monitor-go"><a href="#1、server端监控代码monitor-monitor-go" class="headerlink" title="1、server端监控代码monitor&#x2F;monitor.go"></a>1、server端监控代码monitor&#x2F;monitor.go</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 统计qps</span><br><span class="hljs-keyword">var</span> HttpRequestCount = prometheus.NewCounterVec(<br>	prometheus.CounterOpts&#123;<br>		Name: <span class="hljs-string">&quot;http_request_count&quot;</span>,<br>		Help: <span class="hljs-string">&quot;http request count&quot;</span>,<br>	&#125;,<br>	[]<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;endpoint&quot;</span>, <span class="hljs-string">&quot;port&quot;</span>&#125;,<br>)<br><br><span class="hljs-keyword">var</span> Histogram = prometheus.NewHistogram(prometheus.HistogramOpts&#123;<br>	Name:    <span class="hljs-string">&quot;histogram_showcase_metric&quot;</span>,<br>	Buckets: []<span class="hljs-type">float64</span>&#123;<span class="hljs-number">40</span>, <span class="hljs-number">50</span>, <span class="hljs-number">60</span>, <span class="hljs-number">70</span>, <span class="hljs-number">80</span>, <span class="hljs-number">90</span>, <span class="hljs-number">100</span>, <span class="hljs-number">110</span>, <span class="hljs-number">120</span>, <span class="hljs-number">130</span>, <span class="hljs-number">140</span>, <span class="hljs-number">150</span>, <span class="hljs-number">160</span>, <span class="hljs-number">170</span>, <span class="hljs-number">180</span>, <span class="hljs-number">190</span>, <span class="hljs-number">200</span>, <span class="hljs-number">210</span>, <span class="hljs-number">220</span>, <span class="hljs-number">230</span>, <span class="hljs-number">240</span>, <span class="hljs-number">250</span>, <span class="hljs-number">260</span>, <span class="hljs-number">270</span>, <span class="hljs-number">280</span>, <span class="hljs-number">290</span>, <span class="hljs-number">300</span>&#125;, <span class="hljs-comment">// 根据场景需求配置bucket的范围</span><br>&#125;)<br></code></pre></td></tr></table></figure>
+<h4 id="2、main-go"><a href="#2、main-go" class="headerlink" title="2、main.go"></a>2、main.go</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">init</span><span class="hljs-params">()</span></span> &#123;<br>	prometheus.MustRegister(monitor.HttpRequestCount)<br>	prometheus.MustRegister(monitor.Histogram)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	r := gin.Default()<br>	r.GET(<span class="hljs-string">&quot;/metrics&quot;</span>, PromHandler(promhttp.Handler()))<br>	r.GET(<span class="hljs-string">&quot;/stress&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>		start := time.Now()<br>		c.JSON(http.StatusOK, <span class="hljs-string">&quot;gin demo&quot;</span>)<br>		monitor.HttpRequestCount.WithLabelValues(c.Request.URL.Path, <span class="hljs-string">&quot;8888&quot;</span>).Inc()<br><br>		n := rand.Intn(<span class="hljs-number">100</span>)<br>		<span class="hljs-keyword">if</span> n &gt;= <span class="hljs-number">95</span> &#123;<br>			time.Sleep(<span class="hljs-number">100</span> * time.Millisecond)<br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>			time.Sleep(<span class="hljs-number">50</span> * time.Millisecond)<br>		&#125;<br><br>		monitor.Histogram.Observe((<span class="hljs-type">float64</span>)(time.Since(start) / time.Millisecond))<br>	&#125;)<br><br>	r.Run(<span class="hljs-string">&quot;:8888&quot;</span>)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">PromHandler</span><span class="hljs-params">(handler http.Handler)</span></span> gin.HandlerFunc &#123;<br>	<span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>		handler.ServeHTTP(c.Writer, c.Request)<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="5、prometheus与grafana在windows安装步骤"><a href="#5、prometheus与grafana在windows安装步骤" class="headerlink" title="5、prometheus与grafana在windows安装步骤"></a>5、prometheus与grafana在windows安装步骤</h3><ul>
+<li><p>prometheus安装<br>直接google，改配置如下</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-bullet">-</span> <span class="hljs-attr">job_name:</span> <span class="hljs-string">&quot;prometheus&quot;</span><br><br>  <span class="hljs-comment"># metrics_path defaults to &#x27;/metrics&#x27;</span><br>  <span class="hljs-comment"># scheme defaults to &#x27;http&#x27;.</span><br><br>  <span class="hljs-attr">static_configs:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-attr">targets:</span> [<span class="hljs-string">&quot;localhost:9090&quot;</span>]<br><span class="hljs-comment"># 此次测试监控</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">job_name:</span> <span class="hljs-string">&quot;go-stress&quot;</span><br>  <span class="hljs-attr">static_configs:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-attr">targets:</span> [<span class="hljs-string">&quot;localhost:8888&quot;</span>]<br><span class="hljs-bullet">-</span> <span class="hljs-attr">job_name:</span> <span class="hljs-string">&quot;nginx&quot;</span><br>  <span class="hljs-attr">static_configs:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-attr">targets:</span> [<span class="hljs-string">&quot;localhost:8889&quot;</span>]<br><span class="hljs-comment"># 监控windows   </span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">job_name:</span> <span class="hljs-string">&quot;windows&quot;</span><br>  <span class="hljs-attr">static_configs:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-attr">targets:</span> [<span class="hljs-string">&quot;localhost:9182&quot;</span>]<br></code></pre></td></tr></table></figure>
+<p>启动后打开localhost:9090查看</p>
+</li>
+<li><p>grafana安装<br>官网下载zip安装包，解压启动即可</p>
+</li>
+<li><p>grafana面板配置<br><strong>qps</strong></p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs lisp">sum(<span class="hljs-name">rate</span>(<span class="hljs-name">http_request_duration_count</span>&#123;&#125;[<span class="hljs-number">1</span>m])) by (<span class="hljs-name">endpoint</span>)<br></code></pre></td></tr></table></figure>
+<p>TP90</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">histogram_quantile</span>(<span class="hljs-number">0</span>.<span class="hljs-number">90</span>, rate(histogram_showcase_metric_bucket&#123;instance=<span class="hljs-string">&quot;localhost:8888&quot;</span>&#125;[<span class="hljs-number">1</span>m]))<br></code></pre></td></tr></table></figure>
+<p>TP99、TP95修改对应值即可</p>
+</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E9%80%A0%E8%BD%AE%E5%AD%90-%E5%B7%A5%E5%85%B7%E7%AF%87/" class="category-chain-item">造轮子-工具篇</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+        <a href="/tags/%E5%8E%8B%E6%B5%8B/" class="print-no-link">#压测</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/04/12/chat%E8%81%8A%E5%A4%A9%E7%B3%BB%E7%BB%9F%E6%80%9D%E8%80%83%E4%B9%8B%E4%B8%80/" title="chat聊天系统思考之一">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">chat聊天系统思考之一</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/04/12/%E5%85%B3%E4%BA%8E%E6%9E%84%E5%BB%BA%E5%86%85%E5%AE%B9%E5%AE%A1%E6%A0%B8%E4%BD%93%E7%B3%BB%E6%80%9D%E8%80%83/" title="关于构建内容审核体系思考">
+                        <span class="hidden-mobile">关于构建内容审核体系思考</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,689 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta name="referrer" content="no-referrer"/>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zhangphh">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="cachego 内存模型原理剖析cachego github地址cachego 是一个拥有分片机制的轻量级内存缓存库，API 友好，支持多种数据淘汰机制，可以应用于所有的 GoLang 应用程序中 功能特性  以键值对形式缓存数据，极简的 API 设计风格 引入 option function 模式，简化创建缓存参数 提供 ttl 过期机制，支持限制键值对数量 提供 lru 清理机制，提供 lfu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="cachego内存模型原理剖析">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/04/12/cachego%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="zhangphh">
+<meta property="og:description" content="cachego 内存模型原理剖析cachego github地址cachego 是一个拥有分片机制的轻量级内存缓存库，API 友好，支持多种数据淘汰机制，可以应用于所有的 GoLang 应用程序中 功能特性  以键值对形式缓存数据，极简的 API 设计风格 引入 option function 模式，简化创建缓存参数 提供 ttl 过期机制，支持限制键值对数量 提供 lru 清理机制，提供 lfu">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/9ea78ca7349d4a439e483c3314111ad8.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/8f0bd9e0dd134cdca9a4d186e94af498.png">
+<meta property="article:published_time" content="2025-04-12T06:05:06.000Z">
+<meta property="article:modified_time" content="2025-04-12T06:19:53.261Z">
+<meta property="article:author" content="zhangphh">
+<meta property="article:tag" content="内存缓存">
+<meta property="article:tag" content="cachego">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://i-blog.csdnimg.cn/direct/9ea78ca7349d4a439e483c3314111ad8.png">
+  
+  
+  
+  <title>cachego内存模型原理剖析 - zhangphh</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"zhangphh-blogs.top","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>zhangphh的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="cachego内存模型原理剖析"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        zhangphh
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-04-12 14:05" pubdate>
+          2025年4月12日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          13 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">cachego内存模型原理剖析</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="cachego-内存模型原理剖析"><a href="#cachego-内存模型原理剖析" class="headerlink" title="cachego 内存模型原理剖析"></a>cachego 内存模型原理剖析</h1><p><a target="_blank" rel="noopener" href="https://github.com/FishGoddess/cachego">cachego github地址</a><br>cachego 是一个拥有分片机制的轻量级内存缓存库，API 友好，支持多种数据淘汰机制，可以应用于所有的 GoLang 应用程序中</p>
+<p><strong>功能特性</strong></p>
+<ul>
+<li>以键值对形式缓存数据，极简的 API 设计风格</li>
+<li>引入 option function 模式，简化创建缓存参数</li>
+<li>提供 ttl 过期机制，支持限制键值对数量</li>
+<li>提供 lru 清理机制，提供 lfu 清理机制</li>
+<li>引入分片机制提高并发，分片与内存淘汰策略可灵活搭配</li>
+<li>支持懒清理机制，每一次访问的时候判断是否过期</li>
+<li>支持哨兵清理机制，每隔一定的时间间隔进行清理</li>
+<li>自带 singleflight 机制，减少缓存穿透的伤害</li>
+<li>支持上报缓存状况，可自定义多个缓存上报点</li>
+</ul>
+<h2 id="LRU算法"><a href="#LRU算法" class="headerlink" title="LRU算法"></a>LRU算法</h2><p>LRU（Least Recently Used）称为最近最少使用算法。基本的思想是：长期不被使用的数据，在未来被用到的几率也不大，因此当新的数据进来时，就可以优先将这些数据替换掉。</p>
+<h3 id="算法实现"><a href="#算法实现" class="headerlink" title="算法实现"></a>算法实现</h3><p>cachego LRU策略底层实现为双向链表，头部为最活跃元素，尾部为最近最少使用元素。元素在使用后(插入&#x2F;查询&#x2F;更新)元素会移动到头部，当元素数超限后从尾部移除元素以供插入新元素</p>
+<p><img src="https://i-blog.csdnimg.cn/direct/9ea78ca7349d4a439e483c3314111ad8.png" srcset="/img/loading.gif" lazyload alt="LRU算法实现"></p>
+<h3 id="核心代码解读"><a href="#核心代码解读" class="headerlink" title="核心代码解读"></a>核心代码解读</h3><ul>
+<li>lruCache 元素存储结构体</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> lruCache <span class="hljs-keyword">struct</span> &#123;<br>	*config<br><br>	elementMap  <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]*list.Element <span class="hljs-comment">// map，存在性判断;快速获取元素值</span><br>	elementList *list.List <span class="hljs-comment">// 双向链表用于实现LRU</span><br>	lock        sync.RWMutex <span class="hljs-comment">// 读写锁</span><br><br>	loader *loader<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>set操作<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(lc *lruCache)</span></span> evict() (evictedValue <span class="hljs-keyword">interface</span>&#123;&#125;) &#123; <span class="hljs-comment">// 内存淘汰策略</span><br>	<span class="hljs-keyword">if</span> element := lc.elementList.Back(); element != <span class="hljs-literal">nil</span> &#123; <span class="hljs-comment">// lru队列尾部先过期</span><br>		<span class="hljs-keyword">return</span> lc.removeElement(element)<br>	&#125;<br><br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(lc *lruCache)</span></span> set(key <span class="hljs-type">string</span>, value <span class="hljs-keyword">interface</span>&#123;&#125;, ttl time.Duration) (evictedValue <span class="hljs-keyword">interface</span>&#123;&#125;) &#123;<br>	element, ok := lc.elementMap[key]<br>	<span class="hljs-keyword">if</span> ok &#123; <span class="hljs-comment">// update更新操作</span><br>		entry := lc.unwrap(element)<br>		entry.setup(key, value, ttl)<br><br>		lc.elementList.MoveToFront(element) <span class="hljs-comment">// 元素移到队首</span><br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>	&#125;<br><br>	<span class="hljs-keyword">if</span> lc.maxEntries &gt; <span class="hljs-number">0</span> &amp;&amp; lc.elementList.Len() &gt;= lc.maxEntries &#123; <span class="hljs-comment">// 队列已满, 从队尾移除最近最少访问的元素</span><br>		evictedValue = lc.evict()<br>	&#125;<br><br>	element = lc.elementList.PushFront(newEntry(key, value, ttl, lc.now)) <span class="hljs-comment">// 新建元素, 头插</span><br>	lc.elementMap[key] = element<br><br>	<span class="hljs-keyword">return</span> evictedValue<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>get操作<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(lc *lruCache)</span></span> get(key <span class="hljs-type">string</span>) (value <span class="hljs-keyword">interface</span>&#123;&#125;, found <span class="hljs-type">bool</span>) &#123;<br>	element, ok := lc.elementMap[key] <span class="hljs-comment">// map存在性断定</span><br>	<span class="hljs-keyword">if</span> !ok &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, <span class="hljs-literal">false</span><br>	&#125;<br><br>	entry := lc.unwrap(element)<br>	<span class="hljs-keyword">if</span> entry.expired(<span class="hljs-number">0</span>) &#123; <span class="hljs-comment">// 过期直接判定不存在</span><br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, <span class="hljs-literal">false</span><br>	&#125;<br><br>	lc.elementList.MoveToFront(element) <span class="hljs-comment">// 移到队首</span><br>	<span class="hljs-keyword">return</span> entry.value, <span class="hljs-literal">true</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>代码实现上相对简单，通过map+双向链表实现LRU算法，核心set、get逻辑清晰</li>
+<li>不足处: 虽然有定时任务扫描过期key，但get时对于过期key未立即删除，会存在隐患，若队尾元素未过期，存在过期元素在队列中间，则理论上应该优先淘汰过期key。如果需要严格遵守LRU则可忽略此问题，因此可根据实际业务决定是否改造这一点</li>
+</ul>
+<h2 id="LFU算法"><a href="#LFU算法" class="headerlink" title="LFU算法"></a>LFU算法</h2><p>LFU（least frequently used）最近最不经常使用的算法，对于每个数据，维护其使用的次数以及最近的使用时间，删除的策略是：优先删除使用次数最少的数据，如果存在多个使用次数相同的数据，则优先删除最远一次使用的数据。</p>
+<h3 id="算法实现-1"><a href="#算法实现-1" class="headerlink" title="算法实现"></a>算法实现</h3><p>cachego 是基于最小堆实现的LFU，使用 <code>最小堆</code> 来维护按访问频率排序的元素。当元素被访问时，更新其访问频率。当缓存满时，使用 最小堆 删除访问频率最小的元素</p>
+<ul>
+<li>最小堆<br>一棵完全二叉树，非叶子结点的值不大于左孩子和右孩子的值<br><img src="https://i-blog.csdnimg.cn/direct/8f0bd9e0dd134cdca9a4d186e94af498.png" srcset="/img/loading.gif" lazyload alt="小根堆"></li>
+</ul>
+<h3 id="核心代码解读-1"><a href="#核心代码解读-1" class="headerlink" title="核心代码解读"></a>核心代码解读</h3><ul>
+<li><p>lfuCache结构体</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> lfuCache <span class="hljs-keyword">struct</span> &#123;<br>	*config<br><br>	itemMap  <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]*heap.Item <span class="hljs-comment">// 同样的map，存在性判断及常数get</span><br>	itemHeap *heap.Heap <span class="hljs-comment">// 小根堆</span><br>	lock     sync.RWMutex<br><br>	loader *loader<br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>set操作</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(lc *lfuCache)</span></span> evict() (evictedValue <span class="hljs-keyword">interface</span>&#123;&#125;) &#123; <span class="hljs-comment">// 内存淘汰策略</span><br>	<span class="hljs-keyword">if</span> item := lc.itemHeap.Pop(); item != <span class="hljs-literal">nil</span> &#123; <span class="hljs-comment">// 小根堆移除顶端元素</span><br>		<span class="hljs-keyword">return</span> lc.removeItem(item)<br>	&#125;<br><br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(lc *lfuCache)</span></span> set(key <span class="hljs-type">string</span>, value <span class="hljs-keyword">interface</span>&#123;&#125;, ttl time.Duration) (evictedValue <span class="hljs-keyword">interface</span>&#123;&#125;) &#123;<br>	item, ok := lc.itemMap[key]<br>	<span class="hljs-keyword">if</span> ok &#123;<br>		entry := lc.unwrap(item)<br>		entry.setup(key, value, ttl)<br><br>		item.Adjust(item.Weight() + <span class="hljs-number">1</span>) <span class="hljs-comment">// 核心访问次数加1,调整小根堆</span><br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>	&#125;<br><br>	<span class="hljs-keyword">if</span> lc.maxEntries &gt; <span class="hljs-number">0</span> &amp;&amp; lc.itemHeap.Size() &gt;= lc.maxEntries &#123; <span class="hljs-comment">// 过期驱除顶端key</span><br>		evictedValue = lc.evict()<br>	&#125;<br><br>	item = lc.itemHeap.Push(<span class="hljs-number">0</span>, newEntry(key, value, ttl, lc.now)) <span class="hljs-comment">// 加入小根堆</span><br>	lc.itemMap[key] = item<br><br>	<span class="hljs-keyword">return</span> evictedValue<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>get操作<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(lc *lfuCache)</span></span> get(key <span class="hljs-type">string</span>) (value <span class="hljs-keyword">interface</span>&#123;&#125;, found <span class="hljs-type">bool</span>) &#123;<br>	item, ok := lc.itemMap[key]<br>	<span class="hljs-keyword">if</span> !ok &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, <span class="hljs-literal">false</span><br>	&#125;<br><br>	entry := lc.unwrap(item)<br>	<span class="hljs-keyword">if</span> entry.expired(<span class="hljs-number">0</span>) &#123; <span class="hljs-comment">// 过期判断</span><br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, <span class="hljs-literal">false</span><br>	&#125;<br><br>	item.Adjust(item.Weight() + <span class="hljs-number">1</span>) <span class="hljs-comment">// 访问次数加一</span><br>	<span class="hljs-keyword">return</span> entry.value, <span class="hljs-literal">true</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>巧妙利用小根堆特性实现LFU，每次过期等删除操作只需移除顶端元素即可，增、改、查操作访问次数自增后堆结点元素需交换保证最小堆特性</li>
+<li>不足处: 同样存在get操作唯一出过期key问题</li>
+</ul>
+<h2 id="Standard算法"><a href="#Standard算法" class="headerlink" title="Standard算法"></a>Standard算法</h2><p>cachego 默认存储及内存淘汰策略, 底层使用go原生map实现</p>
+<h3 id="算法实现-2"><a href="#算法实现-2" class="headerlink" title="算法实现"></a>算法实现</h3><p>go 原生map</p>
+<h3 id="核心代码解读-2"><a href="#核心代码解读-2" class="headerlink" title="核心代码解读"></a>核心代码解读</h3><ul>
+<li><p>standardCache结构体</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> standardCache <span class="hljs-keyword">struct</span> &#123;<br>	*config<br><br>	entries <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]*entry <span class="hljs-comment">// 原生map, entry存储key、value、过期时间等</span><br>	lock    sync.RWMutex<br><br>	loader *loader<br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>set操作</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(sc *standardCache)</span></span> evict() (evictedValue <span class="hljs-keyword">interface</span>&#123;&#125;) &#123; <span class="hljs-comment">// 内存淘汰策略</span><br>	<span class="hljs-keyword">for</span> key := <span class="hljs-keyword">range</span> sc.entries &#123; <span class="hljs-comment">// 随机过期key</span><br>		<span class="hljs-keyword">return</span> sc.remove(key)<br>	&#125;<br><br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(sc *standardCache)</span></span> set(key <span class="hljs-type">string</span>, value <span class="hljs-keyword">interface</span>&#123;&#125;, ttl time.Duration) (evictedValue <span class="hljs-keyword">interface</span>&#123;&#125;) &#123;<br>	entry, ok := sc.entries[key]<br>	<span class="hljs-keyword">if</span> ok &#123;<br>		entry.setup(key, value, ttl)<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>	&#125;<br><br>	<span class="hljs-keyword">if</span> sc.maxEntries &gt; <span class="hljs-number">0</span> &amp;&amp; sc.size() &gt;= sc.maxEntries &#123; <span class="hljs-comment">// 超限随机过期key</span><br>		evictedValue = sc.evict()<br>	&#125;<br><br>	sc.entries[key] = newEntry(key, value, ttl, sc.now)<br>	<span class="hljs-keyword">return</span> evictedValue<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>get操作<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(sc *standardCache)</span></span> get(key <span class="hljs-type">string</span>) (value <span class="hljs-keyword">interface</span>&#123;&#125;, found <span class="hljs-type">bool</span>) &#123;<br>	entry, ok := sc.entries[key]<br>	<span class="hljs-keyword">if</span> ok &amp;&amp; !entry.expired(<span class="hljs-number">0</span>) &#123;<br>		<span class="hljs-keyword">return</span> entry.value, <span class="hljs-literal">true</span><br>	&#125;<br><br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, <span class="hljs-literal">false</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="总结-2"><a href="#总结-2" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>gocahce支持三套内存模型以供用户选择底层存储及内存淘汰策略</li>
+<li>提供 ttl 过期机制，支持限制键值对数量</li>
+<li>支持懒清理机制，每一次访问的时候判断是否过期</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%AF%8F%E6%97%A5%E4%B8%80%E5%BA%93/" class="category-chain-item">每日一库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%86%85%E5%AD%98%E7%BC%93%E5%AD%98/" class="print-no-link">#内存缓存</a>
+      
+        <a href="/tags/cachego/" class="print-no-link">#cachego</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/04/12/%E5%85%B3%E4%BA%8E%E6%9E%84%E5%BB%BA%E5%86%85%E5%AE%B9%E5%AE%A1%E6%A0%B8%E4%BD%93%E7%B3%BB%E6%80%9D%E8%80%83/" title="关于构建内容审核体系思考">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">关于构建内容审核体系思考</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/04/12/cachego%E5%88%86%E7%89%87%E3%80%81%E4%B8%8A%E6%8A%A5%E3%80%81GC%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6%E5%8E%9F%E7%90%86/" title="cachego分片、上报、GC与数据加载机制原理">
+                        <span class="hidden-mobile">cachego分片、上报、GC与数据加载机制原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

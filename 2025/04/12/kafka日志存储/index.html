@@ -1,0 +1,761 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta name="referrer" content="no-referrer"/>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zhangphh">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="kafka中的topic是逻辑上的概念，而真正存储消息的是分区，更具体点来说是分区中的segment，每个分区可分为多个segment，存储的消息称为日志。  1、LogSegment一个partition分区拥有多个logsegment，kafka日志追加是顺序写入的，把分区分为多个日志段可减小日志文件的大小，在进行日志删除和数据读取的时候也可以快速定位。需要注意的是只有活跃的日志段拥有文件的写">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka日志存储">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/04/12/kafka%E6%97%A5%E5%BF%97%E5%AD%98%E5%82%A8/index.html">
+<meta property="og:site_name" content="zhangphh">
+<meta property="og:description" content="kafka中的topic是逻辑上的概念，而真正存储消息的是分区，更具体点来说是分区中的segment，每个分区可分为多个segment，存储的消息称为日志。  1、LogSegment一个partition分区拥有多个logsegment，kafka日志追加是顺序写入的，把分区分为多个日志段可减小日志文件的大小，在进行日志删除和数据读取的时候也可以快速定位。需要注意的是只有活跃的日志段拥有文件的写">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/debb6a7abff89eaa5406fe825a7d7c96.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/e67e55f0e3b41e3f180133a27bf265aa.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/2221a3a5ae018c999bc978bb3977d16d.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/eab94e41c101dc5b34b8172fd86b836d.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/74d9bec897b578809d5557eb976105b9.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/0396f436d8ebfc812195bf6f6ee41388.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/0de3ff6fe97f7ad1d8c5ed7265602ee9.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/a161b69b21b901e965b06926f4ad16d7.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/6bf819bee0ee6649c7520a07805ced71.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/2d53df746ab46e50294e3376bf56574c.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/135119f0b928cb6b66d4b32b26c058b1.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/ef5c42502912560929e6098066cff9eb.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/635291df1b1c111292faa01dc16f8d71.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/9568580e5cd939e0ef3212712a5405c3.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/436cbd16d0db0a69dfe7fbdf6ce631e3.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/dfcef8b66138a59b6848ef465a2ad119.png">
+<meta property="article:published_time" content="2025-04-12T06:35:18.000Z">
+<meta property="article:modified_time" content="2025-04-12T06:35:49.570Z">
+<meta property="article:author" content="zhangphh">
+<meta property="article:tag" content="中间件">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/debb6a7abff89eaa5406fe825a7d7c96.png">
+  
+  
+  
+  <title>kafka日志存储 - zhangphh</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"zhangphh-blogs.top","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>zhangphh的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="kafka日志存储"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        zhangphh
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-04-12 14:35" pubdate>
+          2025年4月12日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          41 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">kafka日志存储</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>kafka中的topic是逻辑上的概念，而真正存储消息的是分区，更具体点来说是分区中的segment，每个分区可分为多个segment，存储的消息称为日志。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/debb6a7abff89eaa5406fe825a7d7c96.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h3 id="1、LogSegment"><a href="#1、LogSegment" class="headerlink" title="1、LogSegment"></a>1、LogSegment</h3><p>一个partition分区拥有多个logsegment，kafka日志追加是顺序写入的，把分区分为多个日志段可减小日志文件的大小，在进行日志删除和数据读取的时候也可以快速定位。需要注意的是只有活跃的日志段拥有文件的写入权限，其余的都只有读取权限。</p>
+<p>日志文件存在多个后缀的文件，重点需要关注的有.index，.timeindex，.log三个。每个LogSegment都有一个基准偏移量，用于表示当前LogSegment文件的第一条消息的offset，固定长度是20位数字，长度未达到用0填充，索引文件和日志文件都由此命名规则命名如000000000000000000100.index、00000000000000000100.timeindex、00000000000000000100.log。</p>
+<h3 id="2、日志格式演变"><a href="#2、日志格式演变" class="headerlink" title="2、日志格式演变"></a>2、日志格式演变</h3><h4 id="2-1、v0版本"><a href="#2-1、v0版本" class="headerlink" title="2.1、v0版本"></a>2.1、v0版本</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/e67e55f0e3b41e3f180133a27bf265aa.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>上图RECORD部分即为v0版本的消息格式，在0.10.0版本之前都是采用的此种消息格式。LOG_OVERHEAD和RECORD一期来描述一条消息，与消息对应的是消息集的概念，消息集中包含多条消息，消息集不仅是存储于磁盘以及在网络上传输(Produce和Fetch)的基本形式，而且是kafka中压缩的基本单元。</p>
+<ul>
+<li>crc32， 4字节，crc32校验值，校验范围从magic到value</li>
+<li>magic，1字节，消息格式版本号，此版本magic值为0</li>
+<li>attributes，1字节，表示消息的属性，第三位表示消息的压缩类型，0为NONE，1为GZIP，2为SNAPPY，3为LZ4，其余位保留</li>
+<li>key length，消息的key的长度，如果值为-1，表示此消息无key，即key&#x3D;null</li>
+<li>key，可选，如果没有key则无此字段</li>
+<li>value length，实际消息体的长度，如果为-1，表示消息为空</li>
+<li>value，消息体，可以为空。</li>
+</ul>
+<p>v0版本的消息最小长度为crc32+magic+attributes+key length+value length &#x3D; 4+1+1+4+4&#x3D;14B，当消息的长度小于这个值，则可认为这条消息是破损的而不被接受。</p>
+<h4 id="2-2、v1版本"><a href="#2-2、v1版本" class="headerlink" title="2.2、v1版本"></a>2.2、v1版本</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/2221a3a5ae018c999bc978bb3977d16d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>v1版本的magic值为1，v1版本的消息最小长度为14+8&#x3D;22B，kafka从0.10.0版本开始到0.11.0之前使用的消息格式都是v1</p>
+<p><strong>消息压缩</strong></p>
+<p>kafka发送消息并不是一条一条发送的，而是通过消息集(message set)批量发送的，为了提高性能，kafka支持压缩消息的功能，具体来说就是压缩消息集。压缩解压过程是：生产者发送压缩消息集，broker端保存压缩的消息集，消费者解压消息集进行消费。这样就能减少网络IO消耗提升性能。</p>
+<p>生产者可以通过配置compression.type来开启压缩功能，支持的压缩算法有GZIP、LZ4、SNAPPY三种。压缩消息时，将整个消息集进行压缩作为一个内层消息，这个内层消息作为外层消息的value，并将原来消息集最大的offset作为外层消息的offset，而内层消息的offset永远从0开始，如下图：<br><img src="https://i-blog.csdnimg.cn/blog_migrate/eab94e41c101dc5b34b8172fd86b836d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>对于压缩的情形，外层消息的timestamp设置为：</p>
+<ul>
+<li>如果timestamp类型是CreateTime，那么设置的是内层消息中最大的时间戳(the max timestamp of inner messages if CreateTime is used)</li>
+<li>如果timestamp类型是LogAppendTime，那么设置的是kafka服务器当前的时间戳。</li>
+</ul>
+<p>内层消息的timestamp设置为：</p>
+<ul>
+<li>如果外层消息的timestamp类型是CreateTime，那么设置的是生产者创建消息时的时间戳</li>
+<li>如果外层消息的timestamp类型是LogAppendTime，那么所有的内层消息时间戳都将被忽略</li>
+</ul>
+<h4 id="2-3、v2版本"><a href="#2-3、v2版本" class="headerlink" title="2.3、v2版本"></a>2.3、v2版本</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/74d9bec897b578809d5557eb976105b9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>kafka从0.11.0版本开始使用v2版本的消息格式，v2版本引入了变长整型(Varints)和ZigZag编码，Varints是使用一个或多个字节来序列化整数的一种方法，数值越小，其所占用的字节数就越少。ZigZag编码以一种锯齿状的方式来回穿梭于正负整数之间，以使得带符号整数映射为无符号整数，这样可使得绝对值较小的负数仍享有较小的Varints编码值。</p>
+<p>如果没有使用Varints编码，如v0和v1，当key length &#x3D; -1时，int类型的需要4个字节来保存，而使用Varints只需要一个字节，根据Varints的规则可以推导出0-63之间的数字占1个字节，64-8191之间的数字占2个字节，8192-1048575之间的数字占3个字节。而kafka broker的配置message.max.bytes的默认大小为1000012（Varints编码占3个字节），如果消息格式中与长度有关的字段采用Varints的编码的话，绝大多数情况下都会节省空间，而v2版本的消息格式也正是这样做的。</p>
+<p>v2版本引入了新的概念Record Batch，而摒弃了先前的Message Set，在消息压缩的情形下，Record Batch Header部分（从first offset到records count字段）是不被压缩的，而被压缩的是records字段中的所有内容。</p>
+<p>关于Record字段描述：</p>
+<ul>
+<li>length：消息总长度</li>
+<li>attributes：弃用，但是还是在消息格式中占据1B的大小，以备未来的格式扩展</li>
+<li>timestamp delta：时间戳增量。通常一个timestamp需要占用8个字节，如果像这里保存与RecordBatch的其实时间戳的差值的话可以进一步的节省占用的字节数</li>
+<li>offset delta：位移增量。保存与RecordBatch起始位移的差值，可以节省占用的字节数</li>
+<li>headers：这个字段用来支持应用级别的扩展，而不需要像v0和v1版本一样不得不将一些应用级别的属性值嵌入在消息体里面。Header的格式如上图最有，包含key和value，一个Record里面可以包含0至多个Header</li>
+</ul>
+<p>RecordBatch字段描述：</p>
+<ul>
+<li>first offset：表示当前RecordBatch的起始位移</li>
+<li>length：计算partition leader epoch到headers之间的长度</li>
+<li>partition leader epoch：用来确保数据可靠性</li>
+<li>magic：消息格式的版本号，对于v2版本而言，magic等于2</li>
+<li>attributes，消息属性，注意这里占用了两个字节。低3位表示压缩格式，可以参考v0和v1；第4位表示时间戳类型；第5位表示此RecordBatch是否处于事务中，0表示非事务，1表示事务。第6位表示是否是Control消息，0表示非Control消息，而1表示是Control消息，Control消息用来支持事务功能</li>
+<li>last offset delta：RecordBatch中最后一个Record的offset与first offset的差值。主要被broker用来确认RecordBatch中Records的组装正确性</li>
+<li>first timestamp：RecordBatch中第一条Record的时间戳</li>
+<li>max timestamp：RecordBatch中最大的时间戳，一般情况下是指最后一个Record的时间戳，和last offset delta的作用一样，用来确保消息组装的正确性</li>
+<li>producer id：用来支持幂等性</li>
+<li>producer epoch：和producer id一样，用来支持幂等性</li>
+<li>first sequence：和producer id、producer epoch一样，用来支持幂等性</li>
+<li>records count：RecordBatch中Record的个数</li>
+</ul>
+<h3 id="3、日志索引"><a href="#3、日志索引" class="headerlink" title="3、日志索引"></a>3、日志索引</h3><p>kafka的日志分段文件包括了两个索引文件：偏移量索引文件和时间戳索引文件。其中偏移量索引文件是为了建立消息偏移量与物理地址之间的映射关系，时间戳索引文件则是用来建立时间戳与偏移量的映射关系。索引文件都是以稀疏索引的方式构建的。</p>
+<p>偏移量索引文件是单调递增的，查询时通过二分查找的方式快速定位到小于制定偏移量的最大偏移量，然后根据对应的物理地址找到对应的消息。时间索引文件中的时间戳也是单调递增的，查询时先定位到小于指定时间的最大时间戳，根据此时间戳对应的偏移量去偏移量索引文件中找到对应的消息。</p>
+<h4 id="3-1、偏移量索引"><a href="#3-1、偏移量索引" class="headerlink" title="3.1、偏移量索引"></a>3.1、偏移量索引</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/0396f436d8ebfc812195bf6f6ee41388.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>偏移量索引文件中的每个索引占8个字节，分为两部分</p>
+<ul>
+<li>relative offset，相对偏移量，占4字节，表示消息相对于baseOffsset的偏移量，这个baseOffset即为此日志文件的名</li>
+<li>position，物理地址，占4字节，表示消息在分段日志文件中的物理地址</li>
+</ul>
+<p>使用偏移量索引查找消息过程：</p>
+<ul>
+<li>因为偏移量索引文件文件名是baseOffset，所以可以使用二分法快速定位到指定的偏移量索引文件</li>
+<li>找到索引文件后，在索引文件中利用二分法找到特定的索引项(小于当前偏移量的最大偏移量)，进而找到此索引相对应的物理地址，最后顺序查找出对应偏移量的消息。</li>
+</ul>
+<h4 id="3-2、时间戳索引"><a href="#3-2、时间戳索引" class="headerlink" title="3.2、时间戳索引"></a>3.2、时间戳索引</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/0de3ff6fe97f7ad1d8c5ed7265602ee9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>时间戳索引占12个字节，分为两部分</p>
+<ul>
+<li>timestamp，当前日志分段的最大时间戳</li>
+<li>relative offset，时间戳对应的消息相对偏移量</li>
+</ul>
+<p>根据时间戳查找对应消息过程</p>
+<ul>
+<li>根据时间戳找到每个日志分段的文件中最大的时间戳逐一比较，定位到时间戳索引文件。由于时间戳索引文件也是根据baseOffset命名的，所以这一步无法使用二分法</li>
+<li>在时间戳索引文件中使用二分法定位到时间戳索引项</li>
+<li>根据时间戳索引项对应的偏移量使用偏移量索引找出对应的消息。</li>
+</ul>
+<h4 id="3-3、二分查找算法"><a href="#3-3、二分查找算法" class="headerlink" title="3.3、二分查找算法"></a>3.3、二分查找算法</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/a161b69b21b901e965b06926f4ad16d7.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>kafka写入索引文件的方式是在文件末尾追加写入的，而几乎所有的索引查询都发生在索引尾部。kafka原本的二分查找并没有考虑到缓存的问题，可能会导致一些不必要的缺页中断，kafka线程会被阻塞等待索引项从磁盘读取并放入页缓存中。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/6bf819bee0ee6649c7520a07805ced71.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>上图kafka的某个索引占用了操作系统页缓存的13个页，如果待查找的位移值在最后一个页上则二分查找会一次读取编号为0、6、9、11、12的页。</p>
+<p>通常情况下，一个页会存放成百上千的索引项，锁着索引文件被不断写入，page 12被不断地填充新的索引项。如果此时索引查询方都来自ISR副本集合或Lag很小的消费者，那么这些查询大都集中在对page 12 的查询上，此时page 0、6、9、11、12页一定或被经常性的访问，所以要把他们保存在页缓存上。</p>
+<p>当page 12 空间被使用完了之后，会出现新的页，记为page 13，此时要查询最新的索引项所使用的页缓存为page 0、7、10、12、13，由于page 7和10很长时间没有使用过了，所以很可能会不在页缓存中，因此会出现缺页异常需要从磁盘中加载进页缓存中，这个过程可能会造成几毫秒至一秒的延迟。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/2d53df746ab46e50294e3376bf56574c.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>基于上述问题，提出了缓存友好的二分算法，整体思路就是将所有索引项分为两个部分：热区和冷区。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/135119f0b928cb6b66d4b32b26c058b1.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>这个改进版算法的最大的优点在于查询最热那部分数据所遍历的page永远是固定的，因此大概率在页缓存中，从而避免无意义的缺页异常。</p>
+<p>改进版二分查找算法流程：</p>
+<ul>
+<li>如果索引为空，直接返回&lt;-1, -1&gt;对；</li>
+<li>确认热区第一个索引项位于哪个槽，_warmEntries参数就是所谓的分割线，目前固定为8192字节处，如果是OffsetIndex，_warmEntries &#x3D; 8192 &#x2F; 8 &#x3D; 1024，即第1024个槽，如果是TimeIndex，_warmEntries &#x3D; 8192 &#x2F; 12 &#x3D; 682，即第682个槽；</li>
+<li>判断target位移在热区还是在冷区；</li>
+<li>确保target位移值不能小于当前最小位移值；</li>
+<li>如果在冷区，搜索冷区。</li>
+</ul>
+<p>通过索引查找消息复杂度为 O(log2n)+O(m)， n是索引文件里索引的个数，m为稀疏程度。</p>
+<h3 id="4、日志清理之Log-Deletion"><a href="#4、日志清理之Log-Deletion" class="headerlink" title="4、日志清理之Log Deletion"></a>4、日志清理之Log Deletion</h3><p>可以通过设置broker端的参数log.cleanup.policy值来设置日志清理策略，此参数默认值为delete，当然也可设置为compact，如果将log.cleanup.policy设置为compact，还需要将log.cleanup.enable(默认为true)设置为true。除此之外，log.cleanup.policy的值还可设置为“delete,compact”同时支持日志删除和日志压缩。</p>
+<p>kafka日志管理器中有一个专门的日志删除任务来周期性检测和删除不符合保留条件的日志分段文件，这个周期可以通过broker端的参数log.retention.check.interval.ms来配置，默认为300000，也即是5分钟检测一次。当前的日志分段保留策略有三种：基于时间、基于日志大小和基于日志起始偏移量的保留策略。</p>
+<h4 id="4-1、基于时间"><a href="#4-1、基于时间" class="headerlink" title="4.1、基于时间"></a>4.1、基于时间</h4><p>基于此策略的日志删除会检查当前日志文件中是否保留有超过了设定的阈值(retentionMs)来寻找可删除的日志分段文件集合deletableSegments。retentionMs可以通过broker端参数log.retention.hours、log.retention.minutes、log.retention.ms来配置，其中ms优先级最高，minute次之，hour最低，默认情况下配置了hour为168，也就是默认情况下日志分段文件会被保留7天。</p>
+<p>查找过期的日志分段文件，并不是简单的根据日志分段的最近修改时间lastModifyTime来计算，而是根据日志分段中最大的时间戳largestTimeStamp来计算。因为日志分段的lastModifyTime可以被修改，如分区副本被重新分配。获取largestTimeStamp要先查询该日志分段对应的时间戳索引文件，查找时间戳索引文件的最后一条索引项，若最后一条索引项的时间戳字段值大于0，则取其值，否则设置为lastModifyTime</p>
+<p>如果此分区所有的日志分段文件都被标记为删除，此时会先切分出一个新的日志分段作为activeSegment勇于接受新消息的写入，然后在执行之前的删除操作。</p>
+<p>日志分段删除流程如下：</p>
+<ul>
+<li>从日志对象文件中所维护的跳表中移除待删除的日志分段，以确保没有线程对这些日志分段进行读取操作</li>
+<li>将待删除的日志分段文件加上“.delete”后缀，包括其对应的索引文件</li>
+<li>最后交由一个以”delete-file”命名的延迟任务来删除这些“.delete”为后缀的文件，这个延迟任务可以通过file.delete.delay.ms来设置，默认为60000，即1min</li>
+</ul>
+<h4 id="4-2、基于日志大小"><a href="#4-2、基于日志大小" class="headerlink" title="4.2、基于日志大小"></a>4.2、基于日志大小</h4><p>broker端可以设置log.retention.bytes的值来设置一个分区日志文件的大小，默认为-1表示无穷大，这个值设置的是总的日志分段大小，而不是一个日志分段。</p>
+<p>此策略的删除过程首先会计算需要删除的日志大小，然后从日志文件中的第一个日志分段开始进行查找可删除的日志分段的文件集合deletableSegments，然后删除，删除操作如4.1</p>
+<h4 id="4-3、基于日志起始偏移量"><a href="#4-3、基于日志起始偏移量" class="headerlink" title="4.3、基于日志起始偏移量"></a>4.3、基于日志起始偏移量</h4><p>基于日志起始偏移量的删除策略的判断依据是某日志分段的下一个日志分段的起始偏移量baseOffset是否小于等于logStartOffset，若是则可以删除此日志分段。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/ef5c42502912560929e6098066cff9eb.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>如上图，此时会删除前两个日志分段</p>
+<h3 id="5、日志清理之Log-Compaction"><a href="#5、日志清理之Log-Compaction" class="headerlink" title="5、日志清理之Log Compaction"></a>5、日志清理之Log Compaction</h3><p>Log Compaction是日志压紧、压实，相同key的不同value值只保留最后一个版本，也就是kafka定期将相同key的消息进行合并，只保留最新的value值。</p>
+<h3 id="6、切分文件的时机"><a href="#6、切分文件的时机" class="headerlink" title="6、切分文件的时机"></a>6、切分文件的时机</h3><p>日志文件和索引文件都会存在多个文件，组成多个SegmentLog，其切分规则如下：</p>
+<ul>
+<li>当前日志分段文件的大小超过了broker端参数log.segment.bytes配置的值，默认值为1G</li>
+<li>当前日志分段中消息的最大时间戳与当前系统的时间戳的差值大于log.roll.ms或log.roll.hours参数配置的值，默认只配置了hour为186，即7天</li>
+<li>偏移量索引文件或时间戳索引文件的大小达到了broker端参数log.index.size.max.bytes配置的值，默认为10MB</li>
+<li>追加消息的偏移量与当前日志分段的偏移量之间的差值大于Integer.MAX_VALUE(4字节)，即要追加的消息的偏移量不能转变为相对偏移量。</li>
+</ul>
+<h3 id="7、零拷贝"><a href="#7、零拷贝" class="headerlink" title="7、零拷贝"></a>7、零拷贝</h3><p>kafka速度快的原因：</p>
+<ul>
+<li>多个partition可被并行读取</li>
+<li>顺序写磁盘</li>
+<li>”零拷贝“</li>
+</ul>
+<h4 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/635291df1b1c111292faa01dc16f8d71.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>DMA(Direct Memory Access)：直接存储器访问，一种可让某些硬件子系统去直接访问系统主内存，而不用依赖CPU的计算机系统的功能。也就是跳过CPU，直接访问主内存。传统的内存访问都需要通过CPU的调度来完成，DMA技术出现后使系统 CPU 从实际的 I&#x2F;O 数据传输过程中摆脱出来，从而大大提高系统的吞吐率。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/9568580e5cd939e0ef3212712a5405c3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>很多硬件都支持DMA，其中就包括网卡。实际IO读写，需要进行IO中断，需要CPU响应中断(带来上下文切换)，尽管后来引入DMA来接管CPU的中断请求，但四次copy是存在“不必要的拷贝”的。在这两次CPU拷贝中，应用缓存除了缓存数据并将其传输回socket缓冲区之外并没有实际做什么，所以这两步是可以做优化的，传统IO方式，会注意到实际上并不需要第二个和第三个数据副本。</p>
+<p>说明：这种优化掉两次cpu拷贝的场景，是在读取磁盘的文件后不需要进一步的处理，直接通过网络发送出去，kafka落盘操作就是这种情况，只是把数据写入磁盘，而不对数据进行操作。如果读取到的磁盘数据需要应用程序进一步处理的话，则必须要经过第二次和第三次拷贝，让数据在应用缓冲区处理。</p>
+<p><strong>Memory Mapped Files</strong>，简称为mmap，他的作用就是将磁盘文件映射到内存，通过修改内存就能修改磁盘文件。实现方式就是通过页表的方式实现文件到内存的映射，映射完成后对物理内存的操作会被同步到磁盘上(在合适的时候有操作系统完成)。</p>
+<p>通过mmap，进程想读写硬盘一样读写内存，这个内存是虚拟内存，所以不必担心实际内存的大小，因为有虚拟内存兜底。使用这种方式I&#x2F;O提升很大，省去了内核空间到用户空间复制的开销。<br><img src="https://i-blog.csdnimg.cn/blog_migrate/436cbd16d0db0a69dfe7fbdf6ce631e3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>mmap实现的”零拷贝”将上下文的切换次数从4次减少为了两次，拷贝次数从4次降低到了3次。</p>
+<p><strong>sendfile函数</strong>，Linux从2.1开始引入此函数用于将文件通过socket发送，刚开始时和mmap没有区别，Linux2.4做了进一步的优化。</p>
+<p><img src="https://i-blog.csdnimg.cn/blog_migrate/dfcef8b66138a59b6848ef465a2ad119.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">学习笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="print-no-link">#中间件</a>
+      
+        <a href="/tags/kafka/" class="print-no-link">#kafka</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/04/12/HighWaterMark%E4%B8%8E%E5%89%AF%E6%9C%AC%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6/" title="HighWaterMark与副本同步机制">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">HighWaterMark与副本同步机制</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/04/12/kafka%E6%B6%88%E8%B4%B9%E8%80%85/" title="kafka消费者">
+                        <span class="hidden-mobile">kafka消费者</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
