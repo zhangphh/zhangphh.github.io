@@ -27,18 +27,18 @@
 <meta property="og:site_name" content="zhangphh">
 <meta property="og:description" content="关于构建内容审核体系思考对于很多企业尤其是互联网内容企业如大型论坛、直播等来说，内容安全可以说是企业的生死线。内容审核能够甄别并过滤出涉黄、暴恐、违禁、不良价值观、广告等风险内容，确保企业平台上的信息符合法律法规和运营规则，从而保障企业的内容安全‌。 1 服务划分  业务层：产品的使用者，包括C端和B端用户，其中B端用户一般代表着商家，其发布的内容影响力相对来说会比较大，也是内容审核的重点。 接入">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/e80aa69c76f746de8e8754a187a6bcb2.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/13b31d29eea84100a6974cadefe61a3c.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/862ceb916fa64f73b7c38e2a1c341ae8.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/d60959b5346e4019880edc99789f3c71.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/4dd0dd5848d64f29b0c601c233140c49.jpeg">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/7.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/8.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/9.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/10.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/11.jpeg">
 <meta property="article:published_time" content="2025-04-12T06:12:41.000Z">
-<meta property="article:modified_time" content="2025-04-12T06:13:30.426Z">
+<meta property="article:modified_time" content="2025-05-26T13:59:16.093Z">
 <meta property="article:author" content="zhangphh">
 <meta property="article:tag" content="工作总结">
 <meta property="article:tag" content="内容审核">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://i-blog.csdnimg.cn/direct/e80aa69c76f746de8e8754a187a6bcb2.png">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/7.png">
   
   
   
@@ -290,7 +290,7 @@
               <div class="markdown-body">
                 
                 <h1 id="关于构建内容审核体系思考"><a href="#关于构建内容审核体系思考" class="headerlink" title="关于构建内容审核体系思考"></a>关于构建内容审核体系思考</h1><p>对于很多企业尤其是互联网内容企业如大型论坛、直播等来说，内容安全可以说是企业的生死线。内容审核能够甄别并过滤出涉黄、暴恐、违禁、不良价值观、广告等风险内容，确保企业平台上的信息符合法律法规和运营规则，从而保障企业的内容安全‌。</p>
-<h1 id="1-服务划分"><a href="#1-服务划分" class="headerlink" title="1 服务划分"></a>1 服务划分</h1><p><img src="https://i-blog.csdnimg.cn/direct/e80aa69c76f746de8e8754a187a6bcb2.png" srcset="/img/loading.gif" lazyload alt="服务架构"></p>
+<h1 id="1-服务划分"><a href="#1-服务划分" class="headerlink" title="1 服务划分"></a>1 服务划分</h1><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/7.png" srcset="/img/loading.gif" lazyload alt="服务架构"></p>
 <ul>
 <li>业务层：产品的使用者，包括C端和B端用户，其中B端用户一般代表着商家，其发布的内容影响力相对来说会比较大，也是内容审核的重点。</li>
 <li>接入层：通用网关，负责鉴权、路由转发、负载均衡等</li>
@@ -305,12 +305,12 @@
 <li>灵活的审核策略与执行策略，针对不同业务指定不同审核规则，进而实现业务级审核粒度</li>
 <li>鉴于机审存在误差，对于要求严格的业务，考虑多厂商交叉审核，只要有一个厂商认为图片有问题就流入人审复核</li>
 </ul>
-<h1 id="3-审核体系构建"><a href="#3-审核体系构建" class="headerlink" title="3 审核体系构建"></a>3 审核体系构建</h1><p><img src="https://i-blog.csdnimg.cn/direct/13b31d29eea84100a6974cadefe61a3c.png" srcset="/img/loading.gif" lazyload alt="机审主流程"></p>
+<h1 id="3-审核体系构建"><a href="#3-审核体系构建" class="headerlink" title="3 审核体系构建"></a>3 审核体系构建</h1><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/8.png" srcset="/img/loading.gif" lazyload alt="机审主流程"></p>
 <ul>
 <li>机审整体流程如上图所示，其中图片、文本类机器审核响应速度很快，无需异步处理可实时获取到审核结果，但对于音频、视频、文档这类审核时间较长，需等审核完成后由厂商回调得到最终结果</li>
 <li>图中红色 <strong>countdown动作</strong> 表示审核完成(最终态)计数动作，当countdown计数器降为0时会回调业务方，告知业务方业务资源最终审核状态，如动态是否审核通过，以此判断是否允许发布或全员可见</li>
 </ul>
-<h2 id="3-1-审核策略择路"><a href="#3-1-审核策略择路" class="headerlink" title="3.1 审核策略择路"></a>3.1 审核策略择路</h2><p>由于业务多样、资源类型不同、多厂商审核的原因，审核策略也就会存在多样，因此审核策略需要拎出来单独管理<br>此外，除了这种全局策略，对于电商这种存在店铺概念的还需支持店铺级审核策略及新店铺规则<br><img src="https://i-blog.csdnimg.cn/direct/862ceb916fa64f73b7c38e2a1c341ae8.png" srcset="/img/loading.gif" lazyload alt="审核策略择路"></p>
+<h2 id="3-1-审核策略择路"><a href="#3-1-审核策略择路" class="headerlink" title="3.1 审核策略择路"></a>3.1 审核策略择路</h2><p>由于业务多样、资源类型不同、多厂商审核的原因，审核策略也就会存在多样，因此审核策略需要拎出来单独管理<br>此外，除了这种全局策略，对于电商这种存在店铺概念的还需支持店铺级审核策略及新店铺规则<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/9.png" srcset="/img/loading.gif" lazyload alt="审核策略择路"></p>
 <p>审核策略优先级为 店铺级 &gt; 新店铺 &gt; 全局策略<br>策略分级的优点</p>
 <ul>
 <li>当做白名单用：如当店铺自成立以来从无违规时，可为此店铺配置<code>全放行策略</code>，甚至是不审核，可以根据实际调整</li>
@@ -318,7 +318,7 @@
 <li>新店铺自定义规则：对于新店铺，大部分情况下不需要太严格的审核策略，因此当度为新店铺配置一个规则是有必要的</li>
 <li>店铺审核个性化配置：店铺级策略可支持但店铺定制化审核策略，为指定店铺不同来源路径下的资源配置不同审核策略</li>
 </ul>
-<h2 id="3-2-多厂商交叉审核"><a href="#3-2-多厂商交叉审核" class="headerlink" title="3.2 多厂商交叉审核"></a>3.2 多厂商交叉审核</h2><p>鉴于使用单厂商存在误判且无法容灾，考虑接入多云，只有当多厂商审核结果都为PASS时才放行，否则进入人审<br><img src="https://i-blog.csdnimg.cn/direct/d60959b5346e4019880edc99789f3c71.png" srcset="/img/loading.gif" lazyload alt="多云交叉审核"></p>
+<h2 id="3-2-多厂商交叉审核"><a href="#3-2-多厂商交叉审核" class="headerlink" title="3.2 多厂商交叉审核"></a>3.2 多厂商交叉审核</h2><p>鉴于使用单厂商存在误判且无法容灾，考虑接入多云，只有当多厂商审核结果都为PASS时才放行，否则进入人审<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/10.png" srcset="/img/loading.gif" lazyload alt="多云交叉审核"></p>
 <p>对于交叉审核注意点有以下几条</p>
 <ul>
 <li>优先选择机审准确率高的厂商作为第一道审核线，以降低二次送审次数，节约成本</li>
@@ -327,7 +327,7 @@
 <li>多云审核最终结果可根据具体情况而定</li>
 </ul>
 <h2 id="3-2-送审-机审-人审全流程"><a href="#3-2-送审-机审-人审全流程" class="headerlink" title="3.2 送审-机审-人审全流程"></a>3.2 送审-机审-人审全流程</h2><p>素材从送审-机审-人审全流程大致如下</p>
-<p><img src="https://i-blog.csdnimg.cn/direct/4dd0dd5848d64f29b0c601c233140c49.jpeg" srcset="/img/loading.gif" lazyload alt="审核全流程"></p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/11.jpeg" srcset="/img/loading.gif" lazyload alt="审核全流程"></p>
 <ul>
 <li>送审：业务统一送审到内容审核，由内容审核统一做机审，根据素材类型和业务类型不同做对应的响应</li>
 <li>机审：内容审核服务作为底层服务接收其他业务送审素材，统一送至云厂商，并接收云厂商审核结果回调将审核结果落库并通知送审业务方最终结果</li>

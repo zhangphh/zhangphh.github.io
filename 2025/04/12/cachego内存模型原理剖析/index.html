@@ -27,15 +27,15 @@
 <meta property="og:site_name" content="zhangphh">
 <meta property="og:description" content="cachego 内存模型原理剖析cachego github地址cachego 是一个拥有分片机制的轻量级内存缓存库，API 友好，支持多种数据淘汰机制，可以应用于所有的 GoLang 应用程序中 功能特性  以键值对形式缓存数据，极简的 API 设计风格 引入 option function 模式，简化创建缓存参数 提供 ttl 过期机制，支持限制键值对数量 提供 lru 清理机制，提供 lfu">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/9ea78ca7349d4a439e483c3314111ad8.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/8f0bd9e0dd134cdca9a4d186e94af498.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/5.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/6.png">
 <meta property="article:published_time" content="2025-04-12T06:05:06.000Z">
-<meta property="article:modified_time" content="2025-04-12T06:19:53.261Z">
+<meta property="article:modified_time" content="2025-05-26T13:56:06.605Z">
 <meta property="article:author" content="zhangphh">
 <meta property="article:tag" content="内存缓存">
 <meta property="article:tag" content="cachego">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://i-blog.csdnimg.cn/direct/9ea78ca7349d4a439e483c3314111ad8.png">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/5.png">
   
   
   
@@ -301,7 +301,7 @@
 </ul>
 <h2 id="LRU算法"><a href="#LRU算法" class="headerlink" title="LRU算法"></a>LRU算法</h2><p>LRU（Least Recently Used）称为最近最少使用算法。基本的思想是：长期不被使用的数据，在未来被用到的几率也不大，因此当新的数据进来时，就可以优先将这些数据替换掉。</p>
 <h3 id="算法实现"><a href="#算法实现" class="headerlink" title="算法实现"></a>算法实现</h3><p>cachego LRU策略底层实现为双向链表，头部为最活跃元素，尾部为最近最少使用元素。元素在使用后(插入&#x2F;查询&#x2F;更新)元素会移动到头部，当元素数超限后从尾部移除元素以供插入新元素</p>
-<p><img src="https://i-blog.csdnimg.cn/direct/9ea78ca7349d4a439e483c3314111ad8.png" srcset="/img/loading.gif" lazyload alt="LRU算法实现"></p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/5.png" srcset="/img/loading.gif" lazyload alt="LRU算法实现"></p>
 <h3 id="核心代码解读"><a href="#核心代码解读" class="headerlink" title="核心代码解读"></a>核心代码解读</h3><ul>
 <li>lruCache 元素存储结构体</li>
 </ul>
@@ -322,7 +322,7 @@
 <h2 id="LFU算法"><a href="#LFU算法" class="headerlink" title="LFU算法"></a>LFU算法</h2><p>LFU（least frequently used）最近最不经常使用的算法，对于每个数据，维护其使用的次数以及最近的使用时间，删除的策略是：优先删除使用次数最少的数据，如果存在多个使用次数相同的数据，则优先删除最远一次使用的数据。</p>
 <h3 id="算法实现-1"><a href="#算法实现-1" class="headerlink" title="算法实现"></a>算法实现</h3><p>cachego 是基于最小堆实现的LFU，使用 <code>最小堆</code> 来维护按访问频率排序的元素。当元素被访问时，更新其访问频率。当缓存满时，使用 最小堆 删除访问频率最小的元素</p>
 <ul>
-<li>最小堆<br>一棵完全二叉树，非叶子结点的值不大于左孩子和右孩子的值<br><img src="https://i-blog.csdnimg.cn/direct/8f0bd9e0dd134cdca9a4d186e94af498.png" srcset="/img/loading.gif" lazyload alt="小根堆"></li>
+<li>最小堆<br>一棵完全二叉树，非叶子结点的值不大于左孩子和右孩子的值<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/6.png" srcset="/img/loading.gif" lazyload alt="小根堆"></li>
 </ul>
 <h3 id="核心代码解读-1"><a href="#核心代码解读-1" class="headerlink" title="核心代码解读"></a>核心代码解读</h3><ul>
 <li><p>lfuCache结构体</p>

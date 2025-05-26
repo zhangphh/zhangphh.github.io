@@ -27,23 +27,23 @@
 <meta property="og:site_name" content="zhangphh">
 <meta property="og:description" content="0.11版本之前依赖于HW实现副本同步备份，0.11之后通过Leader epoch实现副本同步备份。 两个概念：  LEO：log end offset，日志末端位移，记录了该副本底层日志下一条消息应存放的位置。 HW，高水位值，小于等于HW的消息是被认为已经备份的。  [0, 7]的消息是已经完全备份，[8, 15)的数据为尚未完全备份的。 kafka中所有的副本都保有自己的HW值和LEO值，">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/81967a72a1b29543c125782cf7726a93.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/f4d5788ec0d46fdd4e37014fab0c8774.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/b62f8534d600a14918440cb1c530f288.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/05e32dff036cb45921ac76eba29d47ef.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/cf3ba65f9873bad0f7af39b723df6e9c.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/3a3ad359c94a3afcfda3b7999ae039f0.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/55b62c8f01eae9895e824f153a220ede.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/42e23e782194bf9fac4b94a667a5694b.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/d9674df658e29af294c4db5726d1259b.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/d6ab5858e323e58a10d99e5b9cdab2f3.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222000602.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222023299.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222046779.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222106099.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222133099.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222213179.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222234243.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222300602.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222318395.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222334411.png">
 <meta property="article:published_time" content="2025-04-12T06:36:09.000Z">
-<meta property="article:modified_time" content="2025-04-12T06:36:27.472Z">
+<meta property="article:modified_time" content="2025-05-26T14:23:57.398Z">
 <meta property="article:author" content="zhangphh">
 <meta property="article:tag" content="中间件">
 <meta property="article:tag" content="kafka">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/81967a72a1b29543c125782cf7726a93.png">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526222000602.png">
   
   
   
@@ -300,8 +300,8 @@
 <li>LEO：log end offset，日志末端位移，记录了该副本底层日志下一条消息应存放的位置。</li>
 <li>HW，高水位值，小于等于HW的消息是被认为已经备份的。</li>
 </ul>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/81967a72a1b29543c125782cf7726a93.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>[0, 7]的消息是已经完全备份，[8, 15)的数据为尚未完全备份的。</p>
-<p>kafka中所有的副本都保有自己的HW值和LEO值，但leader副本中还保存有其他副本的HW值和LEO值，如下图：<br><img src="https://i-blog.csdnimg.cn/blog_migrate/f4d5788ec0d46fdd4e37014fab0c8774.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>leader中保存的副本的HW值和LEO值得作用是用来更新leader副本的HW值。</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222000602.png" srcset="/img/loading.gif" lazyload alt="HW与LEO"><br>[0, 7]的消息是已经完全备份，[8, 15)的数据为尚未完全备份的。</p>
+<p>kafka中所有的副本都保有自己的HW值和LEO值，但leader副本中还保存有其他副本的HW值和LEO值，如下图：<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222023299.png" srcset="/img/loading.gif" lazyload alt="leader HW"><br>leader中保存的副本的HW值和LEO值得作用是用来更新leader副本的HW值。</p>
 <h3 id="1、更新HW值的时机"><a href="#1、更新HW值的时机" class="headerlink" title="1、更新HW值的时机"></a>1、更新HW值的时机</h3><ul>
 <li>follower副本：follower副本会在更新LEO值之后尝试更新HW值。</li>
 <li>leader副本：<ul>
@@ -338,16 +338,16 @@
 </ul>
 </li>
 </ul>
-<h3 id="2、副本同步机制"><a href="#2、副本同步机制" class="headerlink" title="2、副本同步机制"></a>2、副本同步机制</h3><p>当生产者生产一条消息，leader和follower副本高水位更新如下：<br>初始状态时，所有的值都为0<br><img src="https://i-blog.csdnimg.cn/blog_migrate/b62f8534d600a14918440cb1c530f288.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>生产者发送一条消息后<br><img src="https://i-blog.csdnimg.cn/blog_migrate/05e32dff036cb45921ac76eba29d47ef.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>当leader副本将消息写入磁盘后LEO值变为1<br>follower再次从leader拉取消息，有消息拉取到，则状态进一步更新<br><img src="https://i-blog.csdnimg.cn/blog_migrate/cf3ba65f9873bad0f7af39b723df6e9c.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>可以看到此时的副本LEO也被更新为1，但是leader副本和follower副本的HW仍然没有更新，这会在下一次follower的fetch请求时更新。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/3a3ad359c94a3afcfda3b7999ae039f0.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>在新一轮的拉取中，由于位移值时0的消息已经拉取成功，则本次拉取会拉去位移值为1的消息，leader副本接收到请求后，会将remote LEO值更新为1，然后更新HW值为1，将更新后的HW值发送到follower，follower将HW值更新为1，致辞一个完整的同步过程完成。</p>
+<h3 id="2、副本同步机制"><a href="#2、副本同步机制" class="headerlink" title="2、副本同步机制"></a>2、副本同步机制</h3><p>当生产者生产一条消息，leader和follower副本高水位更新如下：<br>初始状态时，所有的值都为0<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222046779.png" srcset="/img/loading.gif" lazyload alt="副本同步机制-初始"><br>生产者发送一条消息后<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222106099.png" srcset="/img/loading.gif" lazyload alt="新消息到来"><br>当leader副本将消息写入磁盘后LEO值变为1<br>follower再次从leader拉取消息，有消息拉取到，则状态进一步更新<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222133099.png" srcset="/img/loading.gif" lazyload alt="leader LEO更新"><br>可以看到此时的副本LEO也被更新为1，但是leader副本和follower副本的HW仍然没有更新，这会在下一次follower的fetch请求时更新。</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222213179.png" srcset="/img/loading.gif" lazyload alt="副本LEO"><br>在新一轮的拉取中，由于位移值时0的消息已经拉取成功，则本次拉取会拉去位移值为1的消息，leader副本接收到请求后，会将remote LEO值更新为1，然后更新HW值为1，将更新后的HW值发送到follower，follower将HW值更新为1，致辞一个完整的同步过程完成。</p>
 <p>上述的拉取流程可以看到kafka使用HW来决定副本备份的进度，而HW值的更新需要新一轮的Fetch请求才能实现，这种设计是有问题的，可能会引起备份数据丢失和备份数据不一致的问题。</p>
-<h3 id="3、Leader-epoch"><a href="#3、Leader-epoch" class="headerlink" title="3、Leader epoch"></a>3、Leader epoch</h3><p><strong>备份数据丢失的问题</strong><br><img src="https://i-blog.csdnimg.cn/blog_migrate/55b62c8f01eae9895e824f153a220ede.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>当生产者发送两条消息leader副本都完成落盘，而且follower副本B的HW已经更新为1，在第二条消息的同步时，fetch请求的响应失败，则B的HW就不会被更新到2，如果此时B重启，则B在重启后会重新加载之前的HW值，也就是1，此时副本B会做日志截断把2的消息删除，并调整LEO为1。<br>B会向A的leader副本发出同步消息的fetch请求，如果此时A恰好宕机，则B升级为leader，而当A重启回来后也会执行日志截断，将HW调整回1与B相同。这样，位移&#x3D;1的消息就从两个副本的log中被删除，即永远地丢失了。</p>
+<h3 id="3、Leader-epoch"><a href="#3、Leader-epoch" class="headerlink" title="3、Leader epoch"></a>3、Leader epoch</h3><p><strong>备份数据丢失的问题</strong><br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222234243.png" srcset="/img/loading.gif" lazyload alt="备份数据丢失"><br>当生产者发送两条消息leader副本都完成落盘，而且follower副本B的HW已经更新为1，在第二条消息的同步时，fetch请求的响应失败，则B的HW就不会被更新到2，如果此时B重启，则B在重启后会重新加载之前的HW值，也就是1，此时副本B会做日志截断把2的消息删除，并调整LEO为1。<br>B会向A的leader副本发出同步消息的fetch请求，如果此时A恰好宕机，则B升级为leader，而当A重启回来后也会执行日志截断，将HW调整回1与B相同。这样，位移&#x3D;1的消息就从两个副本的log中被删除，即永远地丢失了。</p>
 <p> <strong>备份数据不一致问题</strong></p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/42e23e782194bf9fac4b94a667a5694b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>A为leader，B为follower，B的HW只更新到1，此时A、B同事宕机，但是B先恢复，此时B为leader，在A恢复之前又向B写入了新的消息2，此时B的HW为2，此时A恢复，A的HW与B的HW相等，不会出现日志截断，之后会正常的执行下去，但是副本A与leader副本B数据存在不一致的地方。</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222300602.png" srcset="/img/loading.gif" lazyload alt="备份数据不一致"><br>A为leader，B为follower，B的HW只更新到1，此时A、B同事宕机，但是B先恢复，此时B为leader，在A恢复之前又向B写入了新的消息2，此时B的HW为2，此时A恢复，A的HW与B的HW相等，不会出现日志截断，之后会正常的执行下去，但是副本A与leader副本B数据存在不一致的地方。</p>
 <p>针对上述的两个问题，kafka 0.11版本对此进行了优化，采用leader epoch技术来解决上述问题。</p>
 <p>epoch，单调递增的版本号，每当副本领导权发生改变时都会增加该版本号，小版本号的leader被认为是过期的leader，不能再行使leader的权力。它其实是一对值，即(epoch, offset)，offset为该epoch版本对应的leader写入的第一条消息的位移。<br>(0, 0)<br>(1, 120)<br>则表示第一个leader从位移0开始写入消息；共写了120条[0, 119]；而第二个leader版本号是1，从位移120处开始写入消息.</p>
 <p>​​leader broker中会保存这样的一个缓存，并定期地写入到一个checkpoint文件中。</p>
-<p>当leader写底层log时它会尝试更新整个缓存——如果这个leader首次写消息，则会在缓存中增加一个条目；否则就不做更新。而每次副本重新成为leader时会查询这部分缓存，获取出对应leader版本的位移，这就不会发生数据不一致和丢失的情况。<br><img src="https://i-blog.csdnimg.cn/blog_migrate/d9674df658e29af294c4db5726d1259b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://i-blog.csdnimg.cn/blog_migrate/d6ab5858e323e58a10d99e5b9cdab2f3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>当leader写底层log时它会尝试更新整个缓存——如果这个leader首次写消息，则会在缓存中增加一个条目；否则就不做更新。而每次副本重新成为leader时会查询这部分缓存，获取出对应leader版本的位移，这就不会发生数据不一致和丢失的情况。<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222318395.png" srcset="/img/loading.gif" lazyload alt="leader epoch1"><br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526222334411.png" srcset="/img/loading.gif" lazyload alt="leader epoch2"></p>
 
                 
               </div>

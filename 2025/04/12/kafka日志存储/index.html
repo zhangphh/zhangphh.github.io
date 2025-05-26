@@ -27,29 +27,29 @@
 <meta property="og:site_name" content="zhangphh">
 <meta property="og:description" content="kafka中的topic是逻辑上的概念，而真正存储消息的是分区，更具体点来说是分区中的segment，每个分区可分为多个segment，存储的消息称为日志。  1、LogSegment一个partition分区拥有多个logsegment，kafka日志追加是顺序写入的，把分区分为多个日志段可减小日志文件的大小，在进行日志删除和数据读取的时候也可以快速定位。需要注意的是只有活跃的日志段拥有文件的写">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/debb6a7abff89eaa5406fe825a7d7c96.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/e67e55f0e3b41e3f180133a27bf265aa.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/2221a3a5ae018c999bc978bb3977d16d.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/eab94e41c101dc5b34b8172fd86b836d.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/74d9bec897b578809d5557eb976105b9.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/0396f436d8ebfc812195bf6f6ee41388.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/0de3ff6fe97f7ad1d8c5ed7265602ee9.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/a161b69b21b901e965b06926f4ad16d7.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/6bf819bee0ee6649c7520a07805ced71.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/2d53df746ab46e50294e3376bf56574c.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/135119f0b928cb6b66d4b32b26c058b1.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/ef5c42502912560929e6098066cff9eb.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/635291df1b1c111292faa01dc16f8d71.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/9568580e5cd939e0ef3212712a5405c3.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/436cbd16d0db0a69dfe7fbdf6ce631e3.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/dfcef8b66138a59b6848ef465a2ad119.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221250788.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221319410.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221348299.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221407322.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221428826.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221452331.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221507594.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221523067.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221547106.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221624202.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221655730.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221751634.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221813770.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221834154.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221908291.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221932274.png">
 <meta property="article:published_time" content="2025-04-12T06:35:18.000Z">
-<meta property="article:modified_time" content="2025-04-12T06:35:49.570Z">
+<meta property="article:modified_time" content="2025-05-26T14:19:43.024Z">
 <meta property="article:author" content="zhangphh">
 <meta property="article:tag" content="中间件">
 <meta property="article:tag" content="kafka">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/debb6a7abff89eaa5406fe825a7d7c96.png">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250526221250788.png">
   
   
   
@@ -301,10 +301,10 @@
               <div class="markdown-body">
                 
                 <p>kafka中的topic是逻辑上的概念，而真正存储消息的是分区，更具体点来说是分区中的segment，每个分区可分为多个segment，存储的消息称为日志。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/debb6a7abff89eaa5406fe825a7d7c96.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221250788.png" srcset="/img/loading.gif" lazyload alt="索引文件"></p>
 <h3 id="1、LogSegment"><a href="#1、LogSegment" class="headerlink" title="1、LogSegment"></a>1、LogSegment</h3><p>一个partition分区拥有多个logsegment，kafka日志追加是顺序写入的，把分区分为多个日志段可减小日志文件的大小，在进行日志删除和数据读取的时候也可以快速定位。需要注意的是只有活跃的日志段拥有文件的写入权限，其余的都只有读取权限。</p>
 <p>日志文件存在多个后缀的文件，重点需要关注的有.index，.timeindex，.log三个。每个LogSegment都有一个基准偏移量，用于表示当前LogSegment文件的第一条消息的offset，固定长度是20位数字，长度未达到用0填充，索引文件和日志文件都由此命名规则命名如000000000000000000100.index、00000000000000000100.timeindex、00000000000000000100.log。</p>
-<h3 id="2、日志格式演变"><a href="#2、日志格式演变" class="headerlink" title="2、日志格式演变"></a>2、日志格式演变</h3><h4 id="2-1、v0版本"><a href="#2-1、v0版本" class="headerlink" title="2.1、v0版本"></a>2.1、v0版本</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/e67e55f0e3b41e3f180133a27bf265aa.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h3 id="2、日志格式演变"><a href="#2、日志格式演变" class="headerlink" title="2、日志格式演变"></a>2、日志格式演变</h3><h4 id="2-1、v0版本"><a href="#2-1、v0版本" class="headerlink" title="2.1、v0版本"></a>2.1、v0版本</h4><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221319410.png" srcset="/img/loading.gif" lazyload alt="v0版本"></p>
 <p>上图RECORD部分即为v0版本的消息格式，在0.10.0版本之前都是采用的此种消息格式。LOG_OVERHEAD和RECORD一期来描述一条消息，与消息对应的是消息集的概念，消息集中包含多条消息，消息集不仅是存储于磁盘以及在网络上传输(Produce和Fetch)的基本形式，而且是kafka中压缩的基本单元。</p>
 <ul>
 <li>crc32， 4字节，crc32校验值，校验范围从magic到value</li>
@@ -316,10 +316,10 @@
 <li>value，消息体，可以为空。</li>
 </ul>
 <p>v0版本的消息最小长度为crc32+magic+attributes+key length+value length &#x3D; 4+1+1+4+4&#x3D;14B，当消息的长度小于这个值，则可认为这条消息是破损的而不被接受。</p>
-<h4 id="2-2、v1版本"><a href="#2-2、v1版本" class="headerlink" title="2.2、v1版本"></a>2.2、v1版本</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/2221a3a5ae018c999bc978bb3977d16d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>v1版本的magic值为1，v1版本的消息最小长度为14+8&#x3D;22B，kafka从0.10.0版本开始到0.11.0之前使用的消息格式都是v1</p>
+<h4 id="2-2、v1版本"><a href="#2-2、v1版本" class="headerlink" title="2.2、v1版本"></a>2.2、v1版本</h4><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221348299.png" srcset="/img/loading.gif" lazyload alt="v1版本"><br>v1版本的magic值为1，v1版本的消息最小长度为14+8&#x3D;22B，kafka从0.10.0版本开始到0.11.0之前使用的消息格式都是v1</p>
 <p><strong>消息压缩</strong></p>
 <p>kafka发送消息并不是一条一条发送的，而是通过消息集(message set)批量发送的，为了提高性能，kafka支持压缩消息的功能，具体来说就是压缩消息集。压缩解压过程是：生产者发送压缩消息集，broker端保存压缩的消息集，消费者解压消息集进行消费。这样就能减少网络IO消耗提升性能。</p>
-<p>生产者可以通过配置compression.type来开启压缩功能，支持的压缩算法有GZIP、LZ4、SNAPPY三种。压缩消息时，将整个消息集进行压缩作为一个内层消息，这个内层消息作为外层消息的value，并将原来消息集最大的offset作为外层消息的offset，而内层消息的offset永远从0开始，如下图：<br><img src="https://i-blog.csdnimg.cn/blog_migrate/eab94e41c101dc5b34b8172fd86b836d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>对于压缩的情形，外层消息的timestamp设置为：</p>
+<p>生产者可以通过配置compression.type来开启压缩功能，支持的压缩算法有GZIP、LZ4、SNAPPY三种。压缩消息时，将整个消息集进行压缩作为一个内层消息，这个内层消息作为外层消息的value，并将原来消息集最大的offset作为外层消息的offset，而内层消息的offset永远从0开始，如下图：<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221407322.png" srcset="/img/loading.gif" lazyload alt="消息压缩"><br>对于压缩的情形，外层消息的timestamp设置为：</p>
 <ul>
 <li>如果timestamp类型是CreateTime，那么设置的是内层消息中最大的时间戳(the max timestamp of inner messages if CreateTime is used)</li>
 <li>如果timestamp类型是LogAppendTime，那么设置的是kafka服务器当前的时间戳。</li>
@@ -329,7 +329,7 @@
 <li>如果外层消息的timestamp类型是CreateTime，那么设置的是生产者创建消息时的时间戳</li>
 <li>如果外层消息的timestamp类型是LogAppendTime，那么所有的内层消息时间戳都将被忽略</li>
 </ul>
-<h4 id="2-3、v2版本"><a href="#2-3、v2版本" class="headerlink" title="2.3、v2版本"></a>2.3、v2版本</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/74d9bec897b578809d5557eb976105b9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h4 id="2-3、v2版本"><a href="#2-3、v2版本" class="headerlink" title="2.3、v2版本"></a>2.3、v2版本</h4><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221428826.png" srcset="/img/loading.gif" lazyload alt="v2版本"></p>
 <p>kafka从0.11.0版本开始使用v2版本的消息格式，v2版本引入了变长整型(Varints)和ZigZag编码，Varints是使用一个或多个字节来序列化整数的一种方法，数值越小，其所占用的字节数就越少。ZigZag编码以一种锯齿状的方式来回穿梭于正负整数之间，以使得带符号整数映射为无符号整数，这样可使得绝对值较小的负数仍享有较小的Varints编码值。</p>
 <p>如果没有使用Varints编码，如v0和v1，当key length &#x3D; -1时，int类型的需要4个字节来保存，而使用Varints只需要一个字节，根据Varints的规则可以推导出0-63之间的数字占1个字节，64-8191之间的数字占2个字节，8192-1048575之间的数字占3个字节。而kafka broker的配置message.max.bytes的默认大小为1000012（Varints编码占3个字节），如果消息格式中与长度有关的字段采用Varints的编码的话，绝大多数情况下都会节省空间，而v2版本的消息格式也正是这样做的。</p>
 <p>v2版本引入了新的概念Record Batch，而摒弃了先前的Message Set，在消息压缩的情形下，Record Batch Header部分（从first offset到records count字段）是不被压缩的，而被压缩的是records字段中的所有内容。</p>
@@ -358,7 +358,7 @@
 </ul>
 <h3 id="3、日志索引"><a href="#3、日志索引" class="headerlink" title="3、日志索引"></a>3、日志索引</h3><p>kafka的日志分段文件包括了两个索引文件：偏移量索引文件和时间戳索引文件。其中偏移量索引文件是为了建立消息偏移量与物理地址之间的映射关系，时间戳索引文件则是用来建立时间戳与偏移量的映射关系。索引文件都是以稀疏索引的方式构建的。</p>
 <p>偏移量索引文件是单调递增的，查询时通过二分查找的方式快速定位到小于制定偏移量的最大偏移量，然后根据对应的物理地址找到对应的消息。时间索引文件中的时间戳也是单调递增的，查询时先定位到小于指定时间的最大时间戳，根据此时间戳对应的偏移量去偏移量索引文件中找到对应的消息。</p>
-<h4 id="3-1、偏移量索引"><a href="#3-1、偏移量索引" class="headerlink" title="3.1、偏移量索引"></a>3.1、偏移量索引</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/0396f436d8ebfc812195bf6f6ee41388.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>偏移量索引文件中的每个索引占8个字节，分为两部分</p>
+<h4 id="3-1、偏移量索引"><a href="#3-1、偏移量索引" class="headerlink" title="3.1、偏移量索引"></a>3.1、偏移量索引</h4><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221452331.png" srcset="/img/loading.gif" lazyload alt="偏移量索引"><br>偏移量索引文件中的每个索引占8个字节，分为两部分</p>
 <ul>
 <li>relative offset，相对偏移量，占4字节，表示消息相对于baseOffsset的偏移量，这个baseOffset即为此日志文件的名</li>
 <li>position，物理地址，占4字节，表示消息在分段日志文件中的物理地址</li>
@@ -368,7 +368,7 @@
 <li>因为偏移量索引文件文件名是baseOffset，所以可以使用二分法快速定位到指定的偏移量索引文件</li>
 <li>找到索引文件后，在索引文件中利用二分法找到特定的索引项(小于当前偏移量的最大偏移量)，进而找到此索引相对应的物理地址，最后顺序查找出对应偏移量的消息。</li>
 </ul>
-<h4 id="3-2、时间戳索引"><a href="#3-2、时间戳索引" class="headerlink" title="3.2、时间戳索引"></a>3.2、时间戳索引</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/0de3ff6fe97f7ad1d8c5ed7265602ee9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>时间戳索引占12个字节，分为两部分</p>
+<h4 id="3-2、时间戳索引"><a href="#3-2、时间戳索引" class="headerlink" title="3.2、时间戳索引"></a>3.2、时间戳索引</h4><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221507594.png" srcset="/img/loading.gif" lazyload alt="时间戳索引"><br>时间戳索引占12个字节，分为两部分</p>
 <ul>
 <li>timestamp，当前日志分段的最大时间戳</li>
 <li>relative offset，时间戳对应的消息相对偏移量</li>
@@ -379,12 +379,12 @@
 <li>在时间戳索引文件中使用二分法定位到时间戳索引项</li>
 <li>根据时间戳索引项对应的偏移量使用偏移量索引找出对应的消息。</li>
 </ul>
-<h4 id="3-3、二分查找算法"><a href="#3-3、二分查找算法" class="headerlink" title="3.3、二分查找算法"></a>3.3、二分查找算法</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/a161b69b21b901e965b06926f4ad16d7.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>kafka写入索引文件的方式是在文件末尾追加写入的，而几乎所有的索引查询都发生在索引尾部。kafka原本的二分查找并没有考虑到缓存的问题，可能会导致一些不必要的缺页中断，kafka线程会被阻塞等待索引项从磁盘读取并放入页缓存中。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/6bf819bee0ee6649c7520a07805ced71.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>上图kafka的某个索引占用了操作系统页缓存的13个页，如果待查找的位移值在最后一个页上则二分查找会一次读取编号为0、6、9、11、12的页。</p>
+<h4 id="3-3、二分查找算法"><a href="#3-3、二分查找算法" class="headerlink" title="3.3、二分查找算法"></a>3.3、二分查找算法</h4><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221523067.png" srcset="/img/loading.gif" lazyload alt="二分查找算法"><br>kafka写入索引文件的方式是在文件末尾追加写入的，而几乎所有的索引查询都发生在索引尾部。kafka原本的二分查找并没有考虑到缓存的问题，可能会导致一些不必要的缺页中断，kafka线程会被阻塞等待索引项从磁盘读取并放入页缓存中。</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221547106.png" srcset="/img/loading.gif" lazyload alt="缺页中断"><br>上图kafka的某个索引占用了操作系统页缓存的13个页，如果待查找的位移值在最后一个页上则二分查找会一次读取编号为0、6、9、11、12的页。</p>
 <p>通常情况下，一个页会存放成百上千的索引项，锁着索引文件被不断写入，page 12被不断地填充新的索引项。如果此时索引查询方都来自ISR副本集合或Lag很小的消费者，那么这些查询大都集中在对page 12 的查询上，此时page 0、6、9、11、12页一定或被经常性的访问，所以要把他们保存在页缓存上。</p>
 <p>当page 12 空间被使用完了之后，会出现新的页，记为page 13，此时要查询最新的索引项所使用的页缓存为page 0、7、10、12、13，由于page 7和10很长时间没有使用过了，所以很可能会不在页缓存中，因此会出现缺页异常需要从磁盘中加载进页缓存中，这个过程可能会造成几毫秒至一秒的延迟。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/2d53df746ab46e50294e3376bf56574c.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>基于上述问题，提出了缓存友好的二分算法，整体思路就是将所有索引项分为两个部分：热区和冷区。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/135119f0b928cb6b66d4b32b26c058b1.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>这个改进版算法的最大的优点在于查询最热那部分数据所遍历的page永远是固定的，因此大概率在页缓存中，从而避免无意义的缺页异常。</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221624202.png" srcset="/img/loading.gif" lazyload alt="缺页中断"><br>基于上述问题，提出了缓存友好的二分算法，整体思路就是将所有索引项分为两个部分：热区和冷区。</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221655730.png" srcset="/img/loading.gif" lazyload alt="缓存友好的二分算法"><br>这个改进版算法的最大的优点在于查询最热那部分数据所遍历的page永远是固定的，因此大概率在页缓存中，从而避免无意义的缺页异常。</p>
 <p>改进版二分查找算法流程：</p>
 <ul>
 <li>如果索引为空，直接返回&lt;-1, -1&gt;对；</li>
@@ -408,7 +408,7 @@
 <h4 id="4-2、基于日志大小"><a href="#4-2、基于日志大小" class="headerlink" title="4.2、基于日志大小"></a>4.2、基于日志大小</h4><p>broker端可以设置log.retention.bytes的值来设置一个分区日志文件的大小，默认为-1表示无穷大，这个值设置的是总的日志分段大小，而不是一个日志分段。</p>
 <p>此策略的删除过程首先会计算需要删除的日志大小，然后从日志文件中的第一个日志分段开始进行查找可删除的日志分段的文件集合deletableSegments，然后删除，删除操作如4.1</p>
 <h4 id="4-3、基于日志起始偏移量"><a href="#4-3、基于日志起始偏移量" class="headerlink" title="4.3、基于日志起始偏移量"></a>4.3、基于日志起始偏移量</h4><p>基于日志起始偏移量的删除策略的判断依据是某日志分段的下一个日志分段的起始偏移量baseOffset是否小于等于logStartOffset，若是则可以删除此日志分段。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/ef5c42502912560929e6098066cff9eb.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>如上图，此时会删除前两个日志分段</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221751634.png" srcset="/img/loading.gif" lazyload alt="基于日志起始偏移量清除"><br>如上图，此时会删除前两个日志分段</p>
 <h3 id="5、日志清理之Log-Compaction"><a href="#5、日志清理之Log-Compaction" class="headerlink" title="5、日志清理之Log Compaction"></a>5、日志清理之Log Compaction</h3><p>Log Compaction是日志压紧、压实，相同key的不同value值只保留最后一个版本，也就是kafka定期将相同key的消息进行合并，只保留最新的value值。</p>
 <h3 id="6、切分文件的时机"><a href="#6、切分文件的时机" class="headerlink" title="6、切分文件的时机"></a>6、切分文件的时机</h3><p>日志文件和索引文件都会存在多个文件，组成多个SegmentLog，其切分规则如下：</p>
 <ul>
@@ -423,14 +423,14 @@
 <li>顺序写磁盘</li>
 <li>”零拷贝“</li>
 </ul>
-<h4 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h4><p><img src="https://i-blog.csdnimg.cn/blog_migrate/635291df1b1c111292faa01dc16f8d71.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>DMA(Direct Memory Access)：直接存储器访问，一种可让某些硬件子系统去直接访问系统主内存，而不用依赖CPU的计算机系统的功能。也就是跳过CPU，直接访问主内存。传统的内存访问都需要通过CPU的调度来完成，DMA技术出现后使系统 CPU 从实际的 I&#x2F;O 数据传输过程中摆脱出来，从而大大提高系统的吞吐率。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/9568580e5cd939e0ef3212712a5405c3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>很多硬件都支持DMA，其中就包括网卡。实际IO读写，需要进行IO中断，需要CPU响应中断(带来上下文切换)，尽管后来引入DMA来接管CPU的中断请求，但四次copy是存在“不必要的拷贝”的。在这两次CPU拷贝中，应用缓存除了缓存数据并将其传输回socket缓冲区之外并没有实际做什么，所以这两步是可以做优化的，传统IO方式，会注意到实际上并不需要第二个和第三个数据副本。</p>
+<h4 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h4><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221813770.png" srcset="/img/loading.gif" lazyload alt="零拷贝"><br>DMA(Direct Memory Access)：直接存储器访问，一种可让某些硬件子系统去直接访问系统主内存，而不用依赖CPU的计算机系统的功能。也就是跳过CPU，直接访问主内存。传统的内存访问都需要通过CPU的调度来完成，DMA技术出现后使系统 CPU 从实际的 I&#x2F;O 数据传输过程中摆脱出来，从而大大提高系统的吞吐率。</p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221834154.png" srcset="/img/loading.gif" lazyload alt="DMA"><br>很多硬件都支持DMA，其中就包括网卡。实际IO读写，需要进行IO中断，需要CPU响应中断(带来上下文切换)，尽管后来引入DMA来接管CPU的中断请求，但四次copy是存在“不必要的拷贝”的。在这两次CPU拷贝中，应用缓存除了缓存数据并将其传输回socket缓冲区之外并没有实际做什么，所以这两步是可以做优化的，传统IO方式，会注意到实际上并不需要第二个和第三个数据副本。</p>
 <p>说明：这种优化掉两次cpu拷贝的场景，是在读取磁盘的文件后不需要进一步的处理，直接通过网络发送出去，kafka落盘操作就是这种情况，只是把数据写入磁盘，而不对数据进行操作。如果读取到的磁盘数据需要应用程序进一步处理的话，则必须要经过第二次和第三次拷贝，让数据在应用缓冲区处理。</p>
 <p><strong>Memory Mapped Files</strong>，简称为mmap，他的作用就是将磁盘文件映射到内存，通过修改内存就能修改磁盘文件。实现方式就是通过页表的方式实现文件到内存的映射，映射完成后对物理内存的操作会被同步到磁盘上(在合适的时候有操作系统完成)。</p>
-<p>通过mmap，进程想读写硬盘一样读写内存，这个内存是虚拟内存，所以不必担心实际内存的大小，因为有虚拟内存兜底。使用这种方式I&#x2F;O提升很大，省去了内核空间到用户空间复制的开销。<br><img src="https://i-blog.csdnimg.cn/blog_migrate/436cbd16d0db0a69dfe7fbdf6ce631e3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>通过mmap，进程想读写硬盘一样读写内存，这个内存是虚拟内存，所以不必担心实际内存的大小，因为有虚拟内存兜底。使用这种方式I&#x2F;O提升很大，省去了内核空间到用户空间复制的开销。<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221908291.png" srcset="/img/loading.gif" lazyload alt="mmap"></p>
 <p>mmap实现的”零拷贝”将上下文的切换次数从4次减少为了两次，拷贝次数从4次降低到了3次。</p>
 <p><strong>sendfile函数</strong>，Linux从2.1开始引入此函数用于将文件通过socket发送，刚开始时和mmap没有区别，Linux2.4做了进一步的优化。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/dfcef8b66138a59b6848ef465a2ad119.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250526221932274.png" srcset="/img/loading.gif" lazyload alt="sendfile函数"></p>
 
                 
               </div>

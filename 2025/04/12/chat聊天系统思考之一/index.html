@@ -27,18 +27,18 @@
 <meta property="og:site_name" content="zhangphh">
 <meta property="og:description" content="前言之前有段工作经历涉及到了chat相关，而消息的发送 -&gt; 存储 -&gt; 消费是由不同的团队负责的，因此消息如何再多个团队之间流通、以及通过什么介质传递都是需要考虑的问题。 之前我负责过一些消息消费的相关工作，消息发送团队将消息推送到kafka之后，由我们去订阅topic并消费对应的分区，拿到消息之后做对应的消息类型解析、消息发送双方可见性分析、接收方未读数、推送等业务处理。本文旨在记">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/80d56c66d935fd536a67c369798a31ef.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/7247ada71b52740fb7e9eb4713e921e0.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/0875a160e32802d14a70183d09e926d1.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/37a9910c450eef9c59f1b53bdd3a5a31.png">
-<meta property="og:image" content="https://i-blog.csdnimg.cn/blog_migrate/931490e2deb7ca3d158495261f9239e4.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/15.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/16.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/17.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/18.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/19.png">
 <meta property="article:published_time" content="2025-04-12T06:21:12.000Z">
-<meta property="article:modified_time" content="2025-04-12T06:28:44.255Z">
+<meta property="article:modified_time" content="2025-05-26T14:06:03.499Z">
 <meta property="article:author" content="zhangphh">
 <meta property="article:tag" content="工作总结">
 <meta property="article:tag" content="聊天系统">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://i-blog.csdnimg.cn/blog_migrate/80d56c66d935fd536a67c369798a31ef.png">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/15.png">
   
   
   
@@ -291,12 +291,12 @@
                 
                 <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>之前有段工作经历涉及到了chat相关，而消息的发送 -&gt; 存储 -&gt; 消费是由不同的团队负责的，因此消息如何再多个团队之间流通、以及通过什么介质传递都是需要考虑的问题。</p>
 <p>之前我负责过一些消息消费的相关工作，消息发送团队将消息推送到kafka之后，由我们去订阅topic并消费对应的分区，拿到消息之后做对应的消息类型解析、消息发送双方可见性分析、接收方未读数、推送等业务处理。本文旨在记录之前工作中遇到的相关问题以及从consumer端如何优化处理。</p>
-<p><img src="https://i-blog.csdnimg.cn/blog_migrate/80d56c66d935fd536a67c369798a31ef.png" srcset="/img/loading.gif" lazyload alt="消息流转过程"></p>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/15.png" srcset="/img/loading.gif" lazyload alt="消息流转过程"></p>
 <p>可以看到，消息系统中引入了kafka，因此如果kafka出现问题，那整个系统都会出现问题。</p>
 <h3 id="顺序问题"><a href="#顺序问题" class="headerlink" title="顺序问题"></a>顺序问题</h3><h4 id="1、为什么要保证消息的顺序"><a href="#1、为什么要保证消息的顺序" class="headerlink" title="1、为什么要保证消息的顺序"></a>1、为什么要保证消息的顺序</h4><p>我们之所以能够回复对方发过来的消息的依据就是对方消息内容，因此对于chat系统来说，消息的顺序性是必须要求保证的硬核标准，如果消息乱序，那这个chat系统可以说是完全报废。因此对于chat系统来说<strong>必须要保证消息的顺序性</strong> 。</p>
-<h4 id="2、如何保证消息的顺序性"><a href="#2、如何保证消息的顺序性" class="headerlink" title="2、如何保证消息的顺序性"></a>2、如何保证消息的顺序性</h4><p>众所周知，kafka有topic的概念，每个topic可以拥有多个<code>分区(partition)</code>，而每个分区的内部都是有序的<br><img src="https://i-blog.csdnimg.cn/blog_migrate/7247ada71b52740fb7e9eb4713e921e0.png" srcset="/img/loading.gif" lazyload alt="kafka生产者"></p>
+<h4 id="2、如何保证消息的顺序性"><a href="#2、如何保证消息的顺序性" class="headerlink" title="2、如何保证消息的顺序性"></a>2、如何保证消息的顺序性</h4><p>众所周知，kafka有topic的概念，每个topic可以拥有多个<code>分区(partition)</code>，而每个分区的内部都是有序的<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/16.png" srcset="/img/loading.gif" lazyload alt="kafka生产者"></p>
 <p>如此一来，如何保证消息的顺序性思路就比较清晰了，完全可以利用<code>partition</code>的特性去做处理，按照一定的规则将消息写到不同的<code>partition</code>中去，然后消费者消费<code>partition</code>中的消息。</p>
-<p>思考这样一个问题：写到<code>partition</code>中的消息要按照什么规则去做呢？试想一下，我们要保证消息的顺序性，有序性是在同一会话的前提下，也就是说不同会话之前不需要保证消息的顺序性，因此我们可以把<code>conversationId</code>去做如取余或哈希操作，将同一个<code>partition</code>会话的消息全都放入一个<code>partition</code>中。<br><img src="https://i-blog.csdnimg.cn/blog_migrate/0875a160e32802d14a70183d09e926d1.png" srcset="/img/loading.gif" lazyload alt="分区与消费者绑定关系"></p>
+<p>思考这样一个问题：写到<code>partition</code>中的消息要按照什么规则去做呢？试想一下，我们要保证消息的顺序性，有序性是在同一会话的前提下，也就是说不同会话之前不需要保证消息的顺序性，因此我们可以把<code>conversationId</code>去做如取余或哈希操作，将同一个<code>partition</code>会话的消息全都放入一个<code>partition</code>中。<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/17.png" srcset="/img/loading.gif" lazyload alt="分区与消费者绑定关系"></p>
 <h3 id="消息积压"><a href="#消息积压" class="headerlink" title="消息积压"></a>消息积压</h3><p>上述一期方案上线后在项目初期运行一段时间基本没问题，但随着产品推广用户量激增，上述消费架构就出现了问题：消息接收方受消息不够实时，延迟比较高，这对用户来说十分不友好，本来10秒钟几句话的事，到现在可能延迟有1分钟，这谁能忍得了啊。</p>
 <p>虽然可以通过水平扩展增加机器数量来缓解压力，但这不是最优的方案，而且最主要是费钱。</p>
 <h4 id="优化思路"><a href="#优化思路" class="headerlink" title="优化思路"></a>优化思路</h4><h5 id="1、消息体"><a href="#1、消息体" class="headerlink" title="1、消息体"></a>1、消息体</h5><p>思考下kafka消息发送到消息消费共经历了几次IO?</p>
@@ -306,7 +306,7 @@
 <li>consumer从broker取数据时经历一次网络IO</li>
 <li>broker从磁盘拿数据经历一次磁盘IO</li>
 </ul>
-<p>一共经历四次IO，引用一张如图说明<br><img src="https://i-blog.csdnimg.cn/blog_migrate/37a9910c450eef9c59f1b53bdd3a5a31.png" srcset="/img/loading.gif" lazyload alt="kafka消息写入过程"></p>
+<p>一共经历四次IO，引用一张如图说明<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/18.png" srcset="/img/loading.gif" lazyload alt="kafka消息写入过程"></p>
 <p>因此这里有个优化思路就是减少消费者取数据时broker从磁盘取数据时经历的IO耗时，那该如何减少呢？</p>
 <p>试想一下，假设消费者每次取500条数据，如果每条消息的消息体过大，那取500条数据经历IO耗时势必会增加，进而影响生产和消费速度。而且当消息体过大时，还有可能会导致磁盘空间不足的问题。</p>
 <h5 id="2、路由规则"><a href="#2、路由规则" class="headerlink" title="2、路由规则"></a>2、路由规则</h5><p>排除消息体过大的原因之后，我们需要看下kafka是否存在lag，如果存在lag我们要从消费者端解决问题。</p>
@@ -323,7 +323,7 @@
 <li>直接读master节点，这种方案不太可取，这样slave节点只作为备份？而且master节点压力会变大，甚至垮掉，也就失去了主从架构原有的作用。</li>
 <li>加入重试机制，读取到conversation为空时，将此消息加入到<code>重试表</code>，在做后续处理。</li>
 </ul>
-<h5 id="5、并发消费"><a href="#5、并发消费" class="headerlink" title="5、并发消费"></a>5、并发消费</h5><p>上述消费架构是一个分区有一个消费者，既然一个消费者消费速度太慢，那何不增加消费者的数量呢？因此优化思路就有了：<br><img src="https://i-blog.csdnimg.cn/blog_migrate/931490e2deb7ca3d158495261f9239e4.png" srcset="/img/loading.gif" lazyload alt="并发消费实现原理"></p>
+<h5 id="5、并发消费"><a href="#5、并发消费" class="headerlink" title="5、并发消费"></a>5、并发消费</h5><p>上述消费架构是一个分区有一个消费者，既然一个消费者消费速度太慢，那何不增加消费者的数量呢？因此优化思路就有了：<br><img src="https://gitee.com/zhangphh/images-collections/raw/master/19.png" srcset="/img/loading.gif" lazyload alt="并发消费实现原理"></p>
 <p>可以把每个<code>partition</code>中的消息按照conversationId%5然后放入到channel中，然后每个channel在配备一个goroutine去消费，这样既能保证同一会话消息的顺序性，又能提升消费速度尽量避免lag。</p>
 
                 
