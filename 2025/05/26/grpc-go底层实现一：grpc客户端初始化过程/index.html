@@ -1,0 +1,738 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta name="referrer" content="no-referrer"/>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zhangphh">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="基于grpc-go 的v1.72.0  grpc客户端初始化过程将客户端通过grpc.NewClient()方法创建 ClientConn简化为八个步骤，结合源码逐一分析 1.设置ClientConn默认值123456cc :&#x3D; &amp;ClientConn&#123;		target: target,		conns:  make(map[*addrConn]struct&#123;&amp;#125">
+<meta property="og:type" content="article">
+<meta property="og:title" content="grpc-go底层实现一：grpc客户端初始化过程">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/05/26/grpc-go%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E4%B8%80%EF%BC%9Agrpc%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%88%9D%E5%A7%8B%E5%8C%96%E8%BF%87%E7%A8%8B/index.html">
+<meta property="og:site_name" content="zhangphh">
+<meta property="og:description" content="基于grpc-go 的v1.72.0  grpc客户端初始化过程将客户端通过grpc.NewClient()方法创建 ClientConn简化为八个步骤，结合源码逐一分析 1.设置ClientConn默认值123456cc :&#x3D; &amp;ClientConn&#123;		target: target,		conns:  make(map[*addrConn]struct&#123;&amp;#125">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/img_convert/6f7aaf7529599d8555ed1eb48f5ea7c6.png">
+<meta property="article:published_time" content="2025-05-26T14:31:55.000Z">
+<meta property="article:modified_time" content="2025-05-26T14:38:04.149Z">
+<meta property="article:author" content="zhangphh">
+<meta property="article:tag" content="grpc">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://i-blog.csdnimg.cn/img_convert/6f7aaf7529599d8555ed1eb48f5ea7c6.png">
+  
+  
+  
+  <title>grpc-go底层实现一：grpc客户端初始化过程 - zhangphh</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"zhangphh-blogs.top","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>zhangphh的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="grpc-go底层实现一：grpc客户端初始化过程"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        zhangphh
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-05-26 22:31" pubdate>
+          2025年5月26日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">grpc-go底层实现一：grpc客户端初始化过程</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>基于grpc-go 的v1.72.0</p>
+</blockquote>
+<h2 id="grpc客户端初始化过程"><a href="#grpc客户端初始化过程" class="headerlink" title="grpc客户端初始化过程"></a>grpc客户端初始化过程</h2><p><img src="https://i-blog.csdnimg.cn/img_convert/6f7aaf7529599d8555ed1eb48f5ea7c6.png" srcset="/img/loading.gif" lazyload alt="grpc客户端初始化"><br>将客户端通过<code>grpc.NewClient()</code>方法创建 <code>ClientConn</code>简化为八个步骤，结合源码逐一分析</p>
+<h2 id="1-设置ClientConn默认值"><a href="#1-设置ClientConn默认值" class="headerlink" title="1.设置ClientConn默认值"></a>1.设置ClientConn默认值</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go">cc := &amp;ClientConn&#123;<br>		target: target,<br>		conns:  <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[*addrConn]<span class="hljs-keyword">struct</span>&#123;&#125;),<br>		dopts:  defaultDialOptions(), <span class="hljs-comment">// 默认使用dbs解析器</span><br>	&#125;<br><br></code></pre></td></tr></table></figure>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">defaultDialOptions</span><span class="hljs-params">()</span></span> dialOptions &#123;<br>	<span class="hljs-keyword">return</span> dialOptions&#123;<br>		copts: transport.ConnectOptions&#123;<br>			ReadBufferSize:  defaultReadBufSize,<br>			WriteBufferSize: defaultWriteBufSize,<br>			UserAgent:       grpcUA,<br>			BufferPool:      mem.DefaultBufferPool(),<br>		&#125;,<br>		bs:                       internalbackoff.DefaultExponential,<br>		idleTimeout:              <span class="hljs-number">30</span> * time.Minute,<br>		defaultScheme:            <span class="hljs-string">&quot;dns&quot;</span>,<br>		maxCallAttempts:          defaultMaxCallAttempts,<br>		useProxy:                 <span class="hljs-literal">true</span>,<br>		enableLocalDNSResolution: <span class="hljs-literal">false</span>,<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>默认scheme设置为了<code>dns</code></li>
+<li>默认开启代理</li>
+</ul>
+<h2 id="2-选项模式为相关字段赋值"><a href="#2-选项模式为相关字段赋值" class="headerlink" title="2.选项模式为相关字段赋值"></a>2.选项模式为相关字段赋值</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">for</span> _, opt := <span class="hljs-keyword">range</span> opts &#123; <span class="hljs-comment">// option 模式填充配置</span><br>		opt.apply(&amp;cc.dopts)<br>	&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> DialOption <span class="hljs-keyword">interface</span> &#123;<br>	apply(*dialOptions)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> funcDialOption <span class="hljs-keyword">struct</span> &#123;<br>	f <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*dialOptions)</span></span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(fdo *funcDialOption)</span></span> apply(do *dialOptions) &#123;<br>	fdo.f(do)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">newFuncDialOption</span><span class="hljs-params">(f <span class="hljs-keyword">func</span>(*dialOptions)</span></span>) *funcDialOption &#123;<br>	<span class="hljs-keyword">return</span> &amp;funcDialOption&#123;<br>		f: f,<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><code>ClientConn</code>结构体字段很多，grpc通过选项模式设置相关字段，通过执行各自的<code>apply()</code>方法为对应字段赋值</li>
+</ul>
+<h2 id="3-解析target地址并获取resolverBuilder"><a href="#3-解析target地址并获取resolverBuilder" class="headerlink" title="3.解析target地址并获取resolverBuilder"></a>3.解析target地址并获取resolverBuilder</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> initParsedTargetAndResolverBuilder() <span class="hljs-type">error</span> &#123;<br>	logger.Infof(<span class="hljs-string">&quot;original dial target is: %q&quot;</span>, cc.target)<br><br>	<span class="hljs-keyword">var</span> rb resolver.Builder<br>	parsedTarget, err := parseTarget(cc.target)<br>	<span class="hljs-keyword">if</span> err == <span class="hljs-literal">nil</span> &#123;<br>		rb = cc.getResolver(parsedTarget.URL.Scheme) <span class="hljs-comment">// 获取具体resolverBuilder, 如自定义等</span><br>		<span class="hljs-keyword">if</span> rb != <span class="hljs-literal">nil</span> &#123;<br>			cc.parsedTarget = parsedTarget<br>			cc.resolverBuilder = rb<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>		&#125;<br>	&#125;<br><br>	defScheme := cc.dopts.defaultScheme <span class="hljs-comment">// 默认使用dns</span><br>	<span class="hljs-keyword">if</span> internal.UserSetDefaultScheme &#123;<br>		defScheme = resolver.GetDefaultScheme()<br>	&#125;<br><br>	canonicalTarget := defScheme + <span class="hljs-string">&quot;:///&quot;</span> + cc.target<br><br>	parsedTarget, err = parseTarget(canonicalTarget)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> err<br>	&#125;<br>	rb = cc.getResolver(parsedTarget.URL.Scheme) <span class="hljs-comment">// 获取默认的dns resolverBuilder</span><br>	<span class="hljs-keyword">if</span> rb == <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> fmt.Errorf(<span class="hljs-string">&quot;could not get resolver for default scheme: %q&quot;</span>, parsedTarget.URL.Scheme)<br>	&#125;<br>	cc.parsedTarget = parsedTarget<br>	cc.resolverBuilder = rb<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> getResolver(scheme <span class="hljs-type">string</span>) resolver.Builder &#123;<br>	<span class="hljs-keyword">for</span> _, rb := <span class="hljs-keyword">range</span> cc.dopts.resolvers &#123;<br>		<span class="hljs-keyword">if</span> scheme == rb.Scheme() &#123;<br>			<span class="hljs-keyword">return</span> rb<br>		&#125;<br>	&#125;<br>	<span class="hljs-keyword">return</span> resolver.Get(scheme)<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Register</span><span class="hljs-params">(b Builder)</span></span> &#123;<br>	m[b.Scheme()] = b<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Get</span><span class="hljs-params">(scheme <span class="hljs-type">string</span>)</span></span> Builder &#123;<br>	<span class="hljs-keyword">if</span> b, ok := m[scheme]; ok &#123;<br>		<span class="hljs-keyword">return</span> b<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">WithResolvers</span><span class="hljs-params">(rs ...resolver.Builder)</span></span> DialOption &#123;<br>	<span class="hljs-keyword">return</span> newFuncDialOption(<span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(o *dialOptions)</span></span> &#123;<br>		o.resolvers = <span class="hljs-built_in">append</span>(o.resolvers, rs...)<br>	&#125;)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>通过target的scheme获取对应的<code>resolverBuilder</code><ul>
+<li>先从ClientConn的<code>cc.dopts.resolvers</code>这个resolver builder数组循环对比scheme，这个参数的取值就是通过<code>grpc.WithResolvers()</code>方法由第2小节中的选项模式执行apply()方法最终赋值到<code>cc.dopts.resolvers</code>中</li>
+<li>若<code>cc.dopts.resolvers</code>中未找到对应的 resolver builder，则从全局map中获取，这个map是用户自定义的resolver，通过Register方法注册进来</li>
+</ul>
+</li>
+<li>若未显示指定scheme，则默认按照dns处理，将内置的dnsBuilder赋值给 <code>ClientConn.resolverBuilder</code></li>
+</ul>
+<p>从上述源码可知，resolverBuilder允许用户自定义实现，只需要实现 <code>Build</code>和<code>Scheme</code>方法即可，如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Builder <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// Build方法用于创建对应的resolver</span><br>	Build(target Target, cc ClientConn, opts BuildOptions) (Resolver, <span class="hljs-type">error</span>)<br>	Scheme() <span class="hljs-type">string</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>自定义的resolverBuilder有两种方式注册方式</p>
+<ul>
+<li>使用<code>grpc.WithResolvers()</code>在NewClient方法中显示传递</li>
+<li>使用<code>resolver.Register</code>在启动前注册</li>
+<li>grpc.WithResolvers()的优先级高于resolver.Register方式</li>
+</ul>
+<h2 id="4-设置拦截器"><a href="#4-设置拦截器" class="headerlink" title="4.设置拦截器"></a>4.设置拦截器</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> dialOptions <span class="hljs-keyword">struct</span> &#123;<br>	.....<br>    unaryInt  UnaryClientInterceptor<br>    streamInt StreamClientInterceptor<br>    <br>    chainUnaryInts  []UnaryClientInterceptor<br>    chainStreamInts []StreamClientInterceptor<br>	.....<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">chainUnaryClientInterceptors</span><span class="hljs-params">(cc *ClientConn)</span></span> &#123;<br>	interceptors := cc.dopts.chainUnaryInts<br>	<span class="hljs-keyword">if</span> cc.dopts.unaryInt != <span class="hljs-literal">nil</span> &#123;<br>		interceptors = <span class="hljs-built_in">append</span>([]UnaryClientInterceptor&#123;cc.dopts.unaryInt&#125;, interceptors...)<br>	&#125;<br>	<span class="hljs-keyword">var</span> chainedInt UnaryClientInterceptor<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(interceptors) == <span class="hljs-number">0</span> &#123;<br>		chainedInt = <span class="hljs-literal">nil</span><br>	&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(interceptors) == <span class="hljs-number">1</span> &#123;<br>		chainedInt = interceptors[<span class="hljs-number">0</span>]<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		chainedInt = <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(ctx context.Context, method <span class="hljs-type">string</span>, req, reply any, cc *ClientConn, invoker UnaryInvoker, opts ...CallOption)</span></span> <span class="hljs-type">error</span> &#123;<br>			<span class="hljs-keyword">return</span> interceptors[<span class="hljs-number">0</span>](ctx, method, req, reply, cc, getChainUnaryInvoker(interceptors, <span class="hljs-number">0</span>, invoker), opts...)<br>		&#125;<br>	&#125;<br>	cc.dopts.unaryInt = chainedInt<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">getChainUnaryInvoker</span><span class="hljs-params">(interceptors []UnaryClientInterceptor, curr <span class="hljs-type">int</span>, finalInvoker UnaryInvoker)</span></span> UnaryInvoker &#123;<br>	<span class="hljs-keyword">if</span> curr == <span class="hljs-built_in">len</span>(interceptors)<span class="hljs-number">-1</span> &#123;<br>		<span class="hljs-keyword">return</span> finalInvoker<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(ctx context.Context, method <span class="hljs-type">string</span>, req, reply any, cc *ClientConn, opts ...CallOption)</span></span> <span class="hljs-type">error</span> &#123;<br>		<span class="hljs-keyword">return</span> interceptors[curr+<span class="hljs-number">1</span>](ctx, method, req, reply, cc, getChainUnaryInvoker(interceptors, curr+<span class="hljs-number">1</span>, finalInvoker), opts...)<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>这里可以看到 <code>cc.dopts.unaryInt</code>会在链式拦截器的头部，而且<code>dialOptions</code>结构体中对于拦截器(一元和流式)都维护了两种形式即单拦截器与多拦截器，而且单拦截器优先执行，为何如此设计呢？<ul>
+<li>实现方式<ul>
+<li>单拦截器：<code>WithUnaryInterceptor()</code>方法</li>
+<li>链式&#x2F;多拦截器：<code>WithChainUnaryInterceptor()</code>方法</li>
+</ul>
+</li>
+<li>如此设计原因(个人理解)<ul>
+<li>职责分离，通过区分单拦截器和链式拦截器，未来可以独立扩展两者的功能</li>
+<li>版本遗留问题，升级到新版本无需修改单拦截器</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>拦截器执行顺序，从上面的 <code>getChainUnaryInvoker</code>方法看是FIFO的方式执行，对外提供的是链式拦截器的头(类比链表，可持续触发后续拦截器)</li>
+</ul>
+<h2 id="5-自定义ServiceConfig配置"><a href="#5-自定义ServiceConfig配置" class="headerlink" title="5. 自定义ServiceConfig配置"></a>5. 自定义ServiceConfig配置</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> cc.dopts.defaultServiceConfigRawJSON != <span class="hljs-literal">nil</span> &#123; <span class="hljs-comment">// 解析自定义配置，如某些方法超时设置、自定义负载均衡</span><br>		scpr := parseServiceConfig(*cc.dopts.defaultServiceConfigRawJSON, cc.dopts.maxCallAttempts)<br>		<span class="hljs-keyword">if</span> scpr.Err != <span class="hljs-literal">nil</span> &#123;<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;%s: %v&quot;</span>, invalidDefaultServiceConfigErrPrefix, scpr.Err)<br>		&#125;<br>		cc.dopts.defaultServiceConfig, _ = scpr.Config.(*ServiceConfig) <span class="hljs-comment">// 将lbConfig赋值给defaultServiceConfig</span><br>	&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">parseServiceConfig</span><span class="hljs-params">(js <span class="hljs-type">string</span>, maxAttempts <span class="hljs-type">int</span>)</span></span> *serviceconfig.ParseResult &#123;<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(js) == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">return</span> &amp;serviceconfig.ParseResult&#123;Err: fmt.Errorf(<span class="hljs-string">&quot;no JSON service config provided&quot;</span>)&#125;<br>	&#125;<br>	<span class="hljs-keyword">var</span> rsc jsonSC<br>	err := json.Unmarshal([]<span class="hljs-type">byte</span>(js), &amp;rsc)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		logger.Warningf(<span class="hljs-string">&quot;grpc: unmarshalling service config %s: %v&quot;</span>, js, err)<br>		<span class="hljs-keyword">return</span> &amp;serviceconfig.ParseResult&#123;Err: err&#125;<br>	&#125;<br>	sc := ServiceConfig&#123;<br>		Methods:           <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]MethodConfig),<br>		retryThrottling:   rsc.RetryThrottling,<br>		healthCheckConfig: rsc.HealthCheckConfig,<br>		rawJSONString:     js,<br>	&#125;<br>	c := rsc.LoadBalancingConfig <span class="hljs-comment">// 负载均衡配置</span><br>	<span class="hljs-keyword">if</span> c == <span class="hljs-literal">nil</span> &#123;  <span class="hljs-comment">// 此if逻辑最终目的是为了组装LoadBalancingConfig</span><br>		name := pickfirst.Name <span class="hljs-comment">// 默认使用pick_first</span><br>		<span class="hljs-keyword">if</span> rsc.LoadBalancingPolicy != <span class="hljs-literal">nil</span> &#123;<br>			name = *rsc.LoadBalancingPolicy<br>		&#125;<br>		<span class="hljs-keyword">if</span> balancer.Get(name) == <span class="hljs-literal">nil</span> &#123;<br>			name = pickfirst.Name<br>		&#125;<br>		cfg := []<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]any&#123;&#123;name: <span class="hljs-keyword">struct</span>&#123;&#125;&#123;&#125;&#125;&#125;<br>		strCfg, err := json.Marshal(cfg)<br>		<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>			<span class="hljs-keyword">return</span> &amp;serviceconfig.ParseResult&#123;Err: fmt.Errorf(<span class="hljs-string">&quot;unexpected error marshaling simple LB config: %w&quot;</span>, err)&#125;<br>		&#125;<br>		r := json.RawMessage(strCfg)<br>		c = &amp;r<br>	&#125;<br>	cfg, err := gracefulswitch.ParseConfig(*c) <span class="hljs-comment">// 解析childBuilder的配置</span><br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> &amp;serviceconfig.ParseResult&#123;Err: err&#125;<br>	&#125;<br>	sc.lbConfig = cfg <span class="hljs-comment">// 填充自定义的负载均衡配置</span><br><br>	<span class="hljs-keyword">if</span> rsc.MethodConfig == <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> &amp;serviceconfig.ParseResult&#123;Config: &amp;sc&#125;<br>	&#125;<br><br>	paths := <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">struct</span>&#123;&#125;&#123;&#125;<br>	<span class="hljs-keyword">for</span> _, m := <span class="hljs-keyword">range</span> *rsc.MethodConfig &#123; <span class="hljs-comment">// 针对配置的指定method做相应处理，如超时、重试、req/resp大小等</span><br>		<span class="hljs-keyword">if</span> m.Name == <span class="hljs-literal">nil</span> &#123;<br>			<span class="hljs-keyword">continue</span><br>		&#125;<br><br>		mc := MethodConfig&#123;<br>			WaitForReady: m.WaitForReady,<br>			Timeout:      (*time.Duration)(m.Timeout),<br>		&#125;<br>		<span class="hljs-keyword">if</span> mc.RetryPolicy, err = convertRetryPolicy(m.RetryPolicy, maxAttempts); err != <span class="hljs-literal">nil</span> &#123;<br>			logger.Warningf(<span class="hljs-string">&quot;grpc: unmarshalling service config %s: %v&quot;</span>, js, err)<br>			<span class="hljs-keyword">return</span> &amp;serviceconfig.ParseResult&#123;Err: err&#125;<br>		&#125;<br>		... ...<br>	&#125;<br><br>	... ...<br>	<span class="hljs-keyword">return</span> &amp;serviceconfig.ParseResult&#123;Config: &amp;sc&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">ParseConfig</span><span class="hljs-params">(cfg json.RawMessage)</span></span> (serviceconfig.LoadBalancingConfig, <span class="hljs-type">error</span>) &#123;<br>	<span class="hljs-keyword">var</span> lbCfg []<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]json.RawMessage<br>	<span class="hljs-keyword">if</span> err := json.Unmarshal(cfg, &amp;lbCfg); err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>	&#125;<br>	<span class="hljs-keyword">for</span> i, e := <span class="hljs-keyword">range</span> lbCfg &#123;<br>		<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(e) != <span class="hljs-number">1</span> &#123;<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;expected a JSON struct with one entry; received entry %v at index %d&quot;</span>, e, i)<br>		&#125;<br><br>		<span class="hljs-keyword">var</span> name <span class="hljs-type">string</span><br>		<span class="hljs-keyword">var</span> jsonCfg json.RawMessage<br>		<span class="hljs-keyword">for</span> name, jsonCfg = <span class="hljs-keyword">range</span> e &#123;<br>		&#125;<br><br>		builder := balancer.Get(name) <span class="hljs-comment">// 获取childBalancerBuilder</span><br>		<span class="hljs-keyword">if</span> builder == <span class="hljs-literal">nil</span> &#123;<br>			<span class="hljs-comment">// Skip unregistered balancer names.</span><br>			<span class="hljs-keyword">continue</span><br>		&#125;<br><br>		parser, ok := builder.(balancer.ConfigParser)<br>		<span class="hljs-keyword">if</span> !ok &#123;<br>			<span class="hljs-comment">// This is a valid child with no config.</span><br>			<span class="hljs-keyword">return</span> &amp;lbConfig&#123;childBuilder: builder&#125;, <span class="hljs-literal">nil</span><br>		&#125;<br><br>		cfg, err := parser.ParseConfig(jsonCfg)<br>		<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;error parsing config for policy %q: %v&quot;</span>, name, err)<br>		&#125;<br>		<span class="hljs-keyword">return</span> &amp;lbConfig&#123;childBuilder: builder, childConfig: cfg&#125;, <span class="hljs-literal">nil</span><br>	&#125;<br><br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;no supported policies found in config: %v&quot;</span>, <span class="hljs-type">string</span>(cfg))<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(pickfirstBuilder)</span></span> ParseConfig(js json.RawMessage) (serviceconfig.LoadBalancingConfig, <span class="hljs-type">error</span>) &#123;<br>	<span class="hljs-keyword">var</span> cfg pfConfig<br>	<span class="hljs-keyword">if</span> err := json.Unmarshal(js, &amp;cfg); err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;pickfirst: unable to unmarshal LB policy config: %s, error: %v&quot;</span>, <span class="hljs-type">string</span>(js), err)<br>	&#125;<br>	<span class="hljs-keyword">return</span> cfg, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>serviceConfig示例，可参考源码的<code>xds/internal/balancer/clusterimpl/balancer_test.go</code></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;LoadBalancingPolicy&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;addr&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;LoadBalancingConfig&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>    <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;grpclb&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-comment">// 全局负载均衡策略，需配合服务发现组件（如 etcd 或 Consul）使用</span><br>        <span class="hljs-attr">&quot;childPolicy&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>          <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;round_robin&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span> <span class="hljs-comment">// 本地轮询策略，作为子策略</span><br>          <span class="hljs-punctuation">&#125;</span><br>        <span class="hljs-punctuation">]</span><br>      <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">]</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>按照源码结合示例配置捋一下整个parseServiceConfig方法的解析流程</p>
+<ul>
+<li>如果LoadBalancingConfig为空则优先使用LoadBalancingPolicy对应的resolverBuilder(示例中是自定义的，需手动注册)，未指定LoadBalancingPolicy时使用内置的pick_first作为默认值，最终目的是为了组装LoadBalancingConfig</li>
+<li>到此步已经获取到了LoadBalancingConfig，既可以开始ParseConfig动作：获取childResolverBuilder、获取自定义serviceConfig中的负载均衡参数<ul>
+<li>获取balancerBuilder，类似resolver的获取，通过一个Get方法根据name获取对应的balancerBuilder(自定义类型需调<code>balancer.Register</code>注册)</li>
+<li>解析配置，以pickfirstBuilder为例，直接执行反序列化，自定义负载均衡器按需实现ParseConfig即可</li>
+</ul>
+</li>
+</ul>
+<p>从源码加示例上看这块逻辑是比较清晰的</p>
+<p>问题：这里提到了childBuilder与childConfig，为什么要这么做呢？</p>
+<ul>
+<li>childBuilder 的作用<ul>
+<li>子负载均衡构建器是为了创建子负载均衡器的实例，如（round_robin、grpclb 等）</li>
+<li>通过注入不同的 childBuilder，允许开发者或框架动态切换负载均衡策略（如从轮询切换到一致性哈希），而无需修改上层代码</li>
+</ul>
+</li>
+<li>childConfig 的作用<ul>
+<li>childConfig 是 serviceconfig.LoadBalancingConfig 类型，用于传递子负载均衡器所需的参数。例如，在 grpclb 中可能包含服务发现地址或权重分配规则。</li>
+<li>配置与策略解耦，使得同一负载均衡器（如 baseBalancer）可根据不同场景动态调整子策略的行为</li>
+</ul>
+</li>
+<li>设计原因：<ul>
+<li>灵活组合，支持嵌套负载均衡策略（如先通过 grpclb 选择区域，再通过 round_robin 选择实例），通过 childConfig 传递不同层级的配置。</li>
+<li>可通过服务配置（Service Config）动态下发负载均衡策略及参数，客户端通过解析 childConfig 实现策略的实时更新</li>
+</ul>
+</li>
+</ul>
+<h2 id="6-连接安全校验"><a href="#6-连接安全校验" class="headerlink" title="6.连接安全校验"></a>6.连接安全校验</h2><p>初始化客户端连接的目标服务端权威信息（Authority） 的内部方法，主要作用是为 HTTP&#x2F;2 协议头中的 :authority 伪头字段提供正确的值</p>
+<h2 id="7-创建resolver与balancer包装类"><a href="#7-创建resolver与balancer包装类" class="headerlink" title="7.创建resolver与balancer包装类"></a>7.创建resolver与balancer包装类</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> initIdleStateLocked() &#123;<br>	cc.resolverWrapper = newCCResolverWrapper(cc)<br>	cc.balancerWrapper = newCCBalancerWrapper(cc)<br>	cc.firstResolveEvent = grpcsync.NewEvent()<br>	<span class="hljs-comment">// cc.conns == nil is a proxy for the ClientConn being closed. So, instead</span><br>	<span class="hljs-comment">// of setting it to nil here, we recreate the map. This also means that we</span><br>	<span class="hljs-comment">// don&#x27;t have to do this when exiting idle mode.</span><br>	cc.conns = <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[*addrConn]<span class="hljs-keyword">struct</span>&#123;&#125;)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">newCCResolverWrapper</span><span class="hljs-params">(cc *ClientConn)</span></span> *ccResolverWrapper &#123;<br>	ctx, cancel := context.WithCancel(cc.ctx)<br>	<span class="hljs-keyword">return</span> &amp;ccResolverWrapper&#123;<br>		cc:                  cc,<br>		ignoreServiceConfig: cc.dopts.disableServiceConfig,<br>		serializer:          grpcsync.NewCallbackSerializer(ctx),<br>		serializerCancel:    cancel,<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">newCCBalancerWrapper</span><span class="hljs-params">(cc *ClientConn)</span></span> *ccBalancerWrapper &#123;<br>	ctx, cancel := context.WithCancel(cc.ctx)<br>	ccb := &amp;ccBalancerWrapper&#123;<br>		cc: cc,<br>		opts: balancer.BuildOptions&#123;<br>			DialCreds:       cc.dopts.copts.TransportCredentials,<br>			CredsBundle:     cc.dopts.copts.CredsBundle,<br>			Dialer:          cc.dopts.copts.Dialer,<br>			Authority:       cc.authority,<br>			CustomUserAgent: cc.dopts.copts.UserAgent,<br>			ChannelzParent:  cc.channelz,<br>			Target:          cc.parsedTarget,<br>		&#125;,<br>		serializer:       grpcsync.NewCallbackSerializer(ctx),<br>		serializerCancel: cancel,<br>	&#125;<br>	ccb.balancer = gracefulswitch.NewBalancer(ccb, ccb.opts)<br>	<span class="hljs-keyword">return</span> ccb<br>&#125;<br></code></pre></td></tr></table></figure>
+<ul>
+<li>这里只是创建了resolver和balancer的包装类，这两个包装类是用来干嘛的呢？或者说resolverBuilder与resolverWrapper有什么区别，为什么有了resolverBuilder还要resolverWrapper<ul>
+<li>resolverBuilder用于创建具体的解析器实例（如 DNS、Passthrough 等）</li>
+<li>resolverWrapper，协调解析过程与 ClientConn 的交互，包括：<ul>
+<li>解析请求的触发（如 ResolveNow()）</li>
+<li>解析结果的传递（如 UpdateState()）</li>
+</ul>
+</li>
+<li>分层设计原因：<ul>
+<li>解耦解析逻辑与连接管理，resolverBuilder 仅负责创建解析器，而 resolverWrapper 负责将解析结果与 ClientConn 的负载均衡、子连接管理等模块联动，实现职责分离。</li>
+<li>动态配置支持，解析器可能返回动态服务配置（如负载均衡策略），resolverWrapper 需将这些配置传递给 ClientConn 的 balancerWrapper，触发策略切换。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="8-创建idle管理器"><a href="#8-创建idle管理器" class="headerlink" title="8.创建idle管理器"></a>8.创建idle管理器</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewManager</span><span class="hljs-params">(enforcer Enforcer, timeout time.Duration)</span></span> *Manager &#123;<br>	<span class="hljs-keyword">return</span> &amp;Manager&#123;<br>		enforcer:         enforcer,<br>		timeout:          timeout,<br>		actuallyIdle:     <span class="hljs-literal">true</span>,<br>		activeCallsCount: -math.MaxInt32,<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>用于管理链接的状态</p>
+<h2 id="遗留问题"><a href="#遗留问题" class="headerlink" title="遗留问题"></a>遗留问题</h2><p>resolver、balancer、picker是什么？三者又有什么关联？</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/grpc/" class="category-chain-item">grpc</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/grpc/" class="print-no-link">#grpc</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/05/26/grpc-go%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E4%BA%8C%EF%BC%9A%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%B8%8E%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5%E8%BF%87%E7%A8%8B/" title="grpc-go底层实现二：客户端与服务端建立连接过程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">grpc-go底层实现二：客户端与服务端建立连接过程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/04/12/HighWaterMark%E4%B8%8E%E5%89%AF%E6%9C%AC%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6/" title="HighWaterMark与副本同步机制">
+                        <span class="hidden-mobile">HighWaterMark与副本同步机制</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
