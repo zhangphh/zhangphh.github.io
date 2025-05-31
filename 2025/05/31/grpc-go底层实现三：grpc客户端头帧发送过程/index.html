@@ -1,0 +1,688 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta name="referrer" content="no-referrer"/>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zhangphh">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="newClientStreamWithParams 方法详细分析newClientStreamWithParams 方法位于 stream.go 文件的第260-404行，是 gRPC 客户端创建流式连接的核心方法。这个方法负责初始化客户端流，设置上下文、超时、压缩选项，并创建与服务器的连接。下面我将详细分析这个方法的功能及其调用关系。 方法功能分析1. 上下文和超时处理123456var can">
+<meta property="og:type" content="article">
+<meta property="og:title" content="grpc-go底层实现三：grpc客户端头帧发送过程">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/05/31/grpc-go%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E4%B8%89%EF%BC%9Agrpc%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%A4%B4%E5%B8%A7%E5%8F%91%E9%80%81%E8%BF%87%E7%A8%8B/index.html">
+<meta property="og:site_name" content="zhangphh">
+<meta property="og:description" content="newClientStreamWithParams 方法详细分析newClientStreamWithParams 方法位于 stream.go 文件的第260-404行，是 gRPC 客户端创建流式连接的核心方法。这个方法负责初始化客户端流，设置上下文、超时、压缩选项，并创建与服务器的连接。下面我将详细分析这个方法的功能及其调用关系。 方法功能分析1. 上下文和超时处理123456var can">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-161501.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-161554.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-161626.png">
+<meta property="article:published_time" content="2025-05-31T08:14:02.000Z">
+<meta property="article:modified_time" content="2025-05-31T08:27:13.022Z">
+<meta property="article:author" content="zhangphh">
+<meta property="article:tag" content="grpc">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-161501.png">
+  
+  
+  
+  <title>grpc-go底层实现三：grpc客户端头帧发送过程 - zhangphh</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"zhangphh-blogs.top","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>zhangphh的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="grpc-go底层实现三：grpc客户端头帧发送过程"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        zhangphh
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-05-31 16:14" pubdate>
+          2025年5月31日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">grpc-go底层实现三：grpc客户端头帧发送过程</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="newClientStreamWithParams-方法详细分析"><a href="#newClientStreamWithParams-方法详细分析" class="headerlink" title="newClientStreamWithParams 方法详细分析"></a><code>newClientStreamWithParams</code> 方法详细分析</h1><p><code>newClientStreamWithParams</code> 方法位于 <code>stream.go</code> 文件的第260-404行，是 gRPC 客户端创建流式连接的核心方法。这个方法负责初始化客户端流，设置上下文、超时、压缩选项，并创建与服务器的连接。下面我将详细分析这个方法的功能及其调用关系。</p>
+<h2 id="方法功能分析"><a href="#方法功能分析" class="headerlink" title="方法功能分析"></a>方法功能分析</h2><h3 id="1-上下文和超时处理"><a href="#1-上下文和超时处理" class="headerlink" title="1. 上下文和超时处理"></a>1. 上下文和超时处理</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> cancel context.CancelFunc<br><span class="hljs-keyword">if</span> mc.Timeout != <span class="hljs-literal">nil</span> &amp;&amp; *mc.Timeout &gt;= <span class="hljs-number">0</span> &#123;<br>    ctx, cancel = context.WithTimeout(ctx, *mc.Timeout)<br>&#125; <span class="hljs-keyword">else</span> &#123;<br>    ctx, cancel = context.WithCancel(ctx)<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码创建了一个子上下文，如果配置了超时，则设置超时时间；否则创建一个可取消的上下文。这确保了 RPC 调用可以被超时或手动取消。</p>
+<h3 id="2-执行用户自定义的前置方法"><a href="#2-执行用户自定义的前置方法" class="headerlink" title="2. 执行用户自定义的前置方法"></a>2. 执行用户自定义的前置方法</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">for</span> _, o := <span class="hljs-keyword">range</span> opts &#123;<br>    <span class="hljs-keyword">if</span> err := o.before(callInfo); err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, toRPCErr(err)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码执行用户通过 <code>CallOption</code> 提供的前置方法，允许用户在 RPC 调用前进行自定义操作。</p>
+<h3 id="3-设置消息大小限制"><a href="#3-设置消息大小限制" class="headerlink" title="3. 设置消息大小限制"></a>3. 设置消息大小限制</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go">callInfo.maxSendMessageSize = getMaxSize(mc.MaxReqSize, callInfo.maxSendMessageSize, defaultClientMaxSendMessageSize)<br>callInfo.maxReceiveMessageSize = getMaxSize(mc.MaxRespSize, callInfo.maxReceiveMessageSize, defaultClientMaxReceiveMessageSize)<br></code></pre></td></tr></table></figure>
+<p>这段代码设置了发送和接收消息的最大大小，确保消息不会超过限制。</p>
+<h3 id="4-设置编解码器"><a href="#4-设置编解码器" class="headerlink" title="4. 设置编解码器"></a>4. 设置编解码器</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> err := setCallInfoCodec(callInfo); err != <span class="hljs-literal">nil</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码设置了用于序列化和反序列化消息的编解码器。</p>
+<h3 id="5-创建调用头部"><a href="#5-创建调用头部" class="headerlink" title="5. 创建调用头部"></a>5. 创建调用头部</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go">callHdr := &amp;transport.CallHdr&#123;<br>    Host:           cc.authority,<br>    Method:         method,<br>    ContentSubtype: callInfo.contentSubtype,<br>    DoneFunc:       doneFunc,<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码创建了一个调用头部，包含主机、方法、内容子类型和完成回调函数。</p>
+<h3 id="6-设置压缩选项"><a href="#6-设置压缩选项" class="headerlink" title="6. 设置压缩选项"></a>6. 设置压缩选项</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> compressorV0 Compressor<br><span class="hljs-keyword">var</span> compressorV1 encoding.Compressor<br><span class="hljs-keyword">if</span> ct := callInfo.compressorName; ct != <span class="hljs-string">&quot;&quot;</span> &#123;<br>    callHdr.SendCompress = ct<br>    <span class="hljs-keyword">if</span> ct != encoding.Identity &#123;<br>        compressorV1 = encoding.GetCompressor(ct)<br>        <span class="hljs-keyword">if</span> compressorV1 == <span class="hljs-literal">nil</span> &#123;<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, status.Errorf(codes.Internal, <span class="hljs-string">&quot;grpc: Compressor is not installed for requested grpc-encoding %q&quot;</span>, ct)<br>        &#125;<br>    &#125;<br>&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> cc.dopts.compressorV0 != <span class="hljs-literal">nil</span> &#123;<br>    callHdr.SendCompress = cc.dopts.compressorV0.Type()<br>    compressorV0 = cc.dopts.compressorV0<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码设置了发送压缩选项，如果用户指定了压缩器，则使用用户指定的；否则使用连接默认的压缩器。</p>
+<h3 id="7-设置凭证"><a href="#7-设置凭证" class="headerlink" title="7. 设置凭证"></a>7. 设置凭证</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> callInfo.creds != <span class="hljs-literal">nil</span> &#123;<br>    callHdr.Creds = callInfo.creds<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码设置了调用凭证，用于认证。</p>
+<h3 id="8-创建客户端流"><a href="#8-创建客户端流" class="headerlink" title="8. 创建客户端流"></a>8. 创建客户端流</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs go">cs := &amp;clientStream&#123;<br>    callHdr:      callHdr,<br>    ctx:          ctx,<br>    methodConfig: &amp;mc,<br>    opts:         opts,<br>    callInfo:     callInfo,<br>    cc:           cc,<br>    desc:         desc,<br>    codec:        callInfo.codec,<br>    compressorV0: compressorV0,<br>    compressorV1: compressorV1,<br>    cancel:       cancel,<br>    firstAttempt: <span class="hljs-literal">true</span>,<br>    onCommit:     onCommit,<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码创建了一个客户端流对象，包含了所有必要的信息。</p>
+<h3 id="9-设置重试节流器"><a href="#9-设置重试节流器" class="headerlink" title="9. 设置重试节流器"></a>9. 设置重试节流器</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> !cc.dopts.disableRetry &#123;<br>    cs.retryThrottler = cc.retryThrottler.Load().(*retryThrottler)<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码设置了重试节流器，用于控制重试频率。</p>
+<h3 id="10-设置二进制日志"><a href="#10-设置二进制日志" class="headerlink" title="10. 设置二进制日志"></a>10. 设置二进制日志</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> ml := binarylog.GetMethodLogger(method); ml != <span class="hljs-literal">nil</span> &#123;<br>    cs.binlogs = <span class="hljs-built_in">append</span>(cs.binlogs, ml)<br>&#125;<br><span class="hljs-keyword">if</span> cc.dopts.binaryLogger != <span class="hljs-literal">nil</span> &#123;<br>    <span class="hljs-keyword">if</span> ml := cc.dopts.binaryLogger.GetMethodLogger(method); ml != <span class="hljs-literal">nil</span> &#123;<br>        cs.binlogs = <span class="hljs-built_in">append</span>(cs.binlogs, ml)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码设置了二进制日志记录器，用于记录 RPC 调用的二进制日志。</p>
+<h3 id="11-选择传输并创建新流"><a href="#11-选择传输并创建新流" class="headerlink" title="11. 选择传输并创建新流"></a>11. 选择传输并创建新流</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs go">op := <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(a *csAttempt)</span></span> <span class="hljs-type">error</span> &#123;<br>    <span class="hljs-keyword">if</span> err := a.getTransport(); err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> err<br>    &#125;<br>    <span class="hljs-keyword">if</span> err := a.newStream(); err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> err<br>    &#125;<br>    cs.attempt = a<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br><span class="hljs-keyword">if</span> err := cs.withRetry(op, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123; cs.bufferForRetryLocked(<span class="hljs-number">0</span>, op, <span class="hljs-literal">nil</span>) &#125;); err != <span class="hljs-literal">nil</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码定义了一个操作函数，该函数获取传输、创建新流，并将尝试对象赋值给客户端流。然后使用 <code>withRetry</code> 方法执行这个操作，如果失败则重试。</p>
+<h3 id="12-记录二进制日志"><a href="#12-记录二进制日志" class="headerlink" title="12. 记录二进制日志"></a>12. 记录二进制日志</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(cs.binlogs) != <span class="hljs-number">0</span> &#123;<br>    md, _ := metadata.FromOutgoingContext(ctx)<br>    logEntry := &amp;binarylog.ClientHeader&#123;<br>        OnClientSide: <span class="hljs-literal">true</span>,<br>        Header:       md,<br>        MethodName:   method,<br>        Authority:    cs.cc.authority,<br>    &#125;<br>    <span class="hljs-keyword">if</span> deadline, ok := ctx.Deadline(); ok &#123;<br>        logEntry.Timeout = time.Until(deadline)<br>        <span class="hljs-keyword">if</span> logEntry.Timeout &lt; <span class="hljs-number">0</span> &#123;<br>            logEntry.Timeout = <span class="hljs-number">0</span><br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">for</span> _, binlog := <span class="hljs-keyword">range</span> cs.binlogs &#123;<br>        binlog.Log(cs.ctx, logEntry)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码记录了客户端头部的二进制日志。</p>
+<h3 id="13-设置上下文清理"><a href="#13-设置上下文清理" class="headerlink" title="13. 设置上下文清理"></a>13. 设置上下文清理</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> desc != unaryStreamDesc &#123;<br>    <span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>        <span class="hljs-keyword">select</span> &#123;<br>        <span class="hljs-keyword">case</span> &lt;-cc.ctx.Done():<br>            cs.finish(ErrClientConnClosing)<br>        <span class="hljs-keyword">case</span> &lt;-ctx.Done():<br>            cs.finish(toRPCErr(ctx.Err()))<br>        &#125;<br>    &#125;()<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码为非一元流设置了上下文清理，当连接关闭或上下文取消时，结束客户端流。</p>
+<h2 id="关键调用方法分析"><a href="#关键调用方法分析" class="headerlink" title="关键调用方法分析"></a>关键调用方法分析</h2><h3 id="1-withRetry-方法"><a href="#1-withRetry-方法" class="headerlink" title="1. withRetry 方法"></a>1. <code>withRetry</code> 方法</h3><p><code>withRetry</code> 方法是客户端流重试机制的核心，它接受一个操作函数和一个成功回调函数，执行操作并在失败时重试。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cs *clientStream)</span></span> withRetry(op <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(a *csAttempt)</span></span> <span class="hljs-type">error</span>, onSuccess <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span>) <span class="hljs-type">error</span> &#123;<br>    cs.mu.Lock()<br>    <span class="hljs-keyword">for</span> &#123;<br>        <span class="hljs-keyword">if</span> cs.committed &#123;<br>            cs.mu.Unlock()<br>            <span class="hljs-keyword">return</span> toRPCErr(op(cs.attempt))<br>        &#125;<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(cs.replayBuffer) == <span class="hljs-number">0</span> &#123;<br>            <span class="hljs-keyword">var</span> err <span class="hljs-type">error</span><br>            <span class="hljs-keyword">if</span> cs.attempt, err = cs.newAttemptLocked(<span class="hljs-literal">false</span> <span class="hljs-comment">/* isTransparent */</span>); err != <span class="hljs-literal">nil</span> &#123;<br>                cs.mu.Unlock()<br>                cs.finish(err)<br>                <span class="hljs-keyword">return</span> err<br>            &#125;<br>        &#125;<br>        a := cs.attempt<br>        cs.mu.Unlock()<br>        err := op(a)<br>        cs.mu.Lock()<br>        <span class="hljs-keyword">if</span> a != cs.attempt &#123;<br>            <span class="hljs-keyword">continue</span><br>        &#125;<br>        <span class="hljs-keyword">if</span> err == io.EOF &#123;<br>            &lt;-a.transportStream.Done()<br>        &#125;<br>        <span class="hljs-keyword">if</span> err == <span class="hljs-literal">nil</span> || (err == io.EOF &amp;&amp; a.transportStream.Status().Code() == codes.OK) &#123;<br>            onSuccess()<br>            cs.mu.Unlock()<br>            <span class="hljs-keyword">return</span> err<br>        &#125;<br>        <span class="hljs-keyword">if</span> err := cs.retryLocked(a, err); err != <span class="hljs-literal">nil</span> &#123;<br>            cs.mu.Unlock()<br>            <span class="hljs-keyword">return</span> err<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-newAttemptLocked-方法"><a href="#2-newAttemptLocked-方法" class="headerlink" title="2. newAttemptLocked 方法"></a>2. <code>newAttemptLocked</code> 方法</h3><p><code>newAttemptLocked</code> 方法创建一个新的客户端流尝试对象，包含上下文、统计处理器和跟踪信息。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cs *clientStream)</span></span> newAttemptLocked(isTransparent <span class="hljs-type">bool</span>) (*csAttempt, <span class="hljs-type">error</span>) &#123;<br>    <span class="hljs-keyword">if</span> err := cs.ctx.Err(); err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, toRPCErr(err)<br>    &#125;<br>    <span class="hljs-keyword">if</span> err := cs.cc.ctx.Err(); err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, ErrClientConnClosing<br>    &#125;<br><br>    ctx := newContextWithRPCInfo(cs.ctx, cs.callInfo.failFast, cs.callInfo.codec, cs.compressorV0, cs.compressorV1)<br>    method := cs.callHdr.Method<br>    <span class="hljs-keyword">var</span> beginTime time.Time<br>    shs := cs.cc.dopts.copts.StatsHandlers<br>    <span class="hljs-keyword">for</span> _, sh := <span class="hljs-keyword">range</span> shs &#123;<br>        ctx = sh.TagRPC(ctx, &amp;stats.RPCTagInfo&#123;FullMethodName: method, FailFast: cs.callInfo.failFast&#125;)<br>        beginTime = time.Now()<br>        begin := &amp;stats.Begin&#123;<br>            Client:                    <span class="hljs-literal">true</span>,<br>            BeginTime:                 beginTime,<br>            FailFast:                  cs.callInfo.failFast,<br>            IsClientStream:            cs.desc.ClientStreams,<br>            IsServerStream:            cs.desc.ServerStreams,<br>            IsTransparentRetryAttempt: isTransparent,<br>        &#125;<br>        sh.HandleRPC(ctx, begin)<br>    &#125;<br><br>    <span class="hljs-keyword">var</span> trInfo *traceInfo<br>    <span class="hljs-keyword">if</span> EnableTracing &#123;<br>        trInfo = &amp;traceInfo&#123;<br>            tr: newTrace(<span class="hljs-string">&quot;grpc.Sent.&quot;</span>+methodFamily(method), method),<br>            firstLine: firstLine&#123;<br>                client: <span class="hljs-literal">true</span>,<br>            &#125;,<br>        &#125;<br>        <span class="hljs-keyword">if</span> deadline, ok := ctx.Deadline(); ok &#123;<br>            trInfo.firstLine.deadline = time.Until(deadline)<br>        &#125;<br>        trInfo.tr.LazyLog(&amp;trInfo.firstLine, <span class="hljs-literal">false</span>)<br>        ctx = newTraceContext(ctx, trInfo.tr)<br>    &#125;<br><br>    <span class="hljs-keyword">return</span> &amp;csAttempt&#123;<br>        ctx:            ctx,<br>        beginTime:      beginTime,<br>        cs:             cs,<br>        decompressorV0: cs.cc.dopts.dc,<br>        statsHandlers:  shs,<br>        trInfo:         trInfo,<br>    &#125;, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-getTransport-方法"><a href="#3-getTransport-方法" class="headerlink" title="3. getTransport 方法"></a>3. <code>getTransport</code> 方法</h3><p><code>getTransport</code> 方法获取用于传输的客户端传输对象。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a *csAttempt)</span></span> getTransport() <span class="hljs-type">error</span> &#123;<br>    cs := a.cs<br><br>    <span class="hljs-keyword">var</span> err <span class="hljs-type">error</span><br>    a.transport, a.pickResult, err = cs.cc.getTransport(a.ctx, cs.callInfo.failFast, cs.callHdr.Method)<br>    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">if</span> de, ok := err.(dropError); ok &#123;<br>            err = de.<span class="hljs-type">error</span><br>            a.drop = <span class="hljs-literal">true</span><br>        &#125;<br>        <span class="hljs-keyword">return</span> err<br>    &#125;<br>    <span class="hljs-keyword">if</span> a.trInfo != <span class="hljs-literal">nil</span> &#123;<br>        a.trInfo.firstLine.SetRemoteAddr(a.transport.RemoteAddr())<br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-newStream-方法"><a href="#4-newStream-方法" class="headerlink" title="4. newStream 方法"></a>4. <code>newStream</code> 方法</h3><p><code>newStream</code> 方法在传输上创建一个新的流。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a *csAttempt)</span></span> newStream() <span class="hljs-type">error</span> &#123;<br>    cs := a.cs<br>    cs.callHdr.PreviousAttempts = cs.numRetries<br><br>    <span class="hljs-comment">// 合并 PickResult 中的元数据</span><br>    <span class="hljs-keyword">if</span> a.pickResult.Metadata != <span class="hljs-literal">nil</span> &#123;<br>        md, _ := metadata.FromOutgoingContext(a.ctx)<br>        md = metadata.Join(md, a.pickResult.Metadata)<br>        a.ctx = metadata.NewOutgoingContext(a.ctx, md)<br>    &#125;<br><br>    s, err := a.transport.NewStream(a.ctx, cs.callHdr)<br>    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>        nse, ok := err.(*transport.NewStreamError)<br>        <span class="hljs-keyword">if</span> !ok &#123;<br>            <span class="hljs-keyword">return</span> err<br>        &#125;<br><br>        <span class="hljs-keyword">if</span> nse.AllowTransparentRetry &#123;<br>            a.allowTransparentRetry = <span class="hljs-literal">true</span><br>        &#125;<br><br>        <span class="hljs-keyword">return</span> toRPCErr(nse.Err)<br>    &#125;<br>    a.transportStream = s<br>    a.ctx = s.Context()<br>    a.parser = &amp;parser&#123;r: s, bufferPool: a.cs.cc.dopts.copts.BufferPool&#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-shouldRetry-方法"><a href="#5-shouldRetry-方法" class="headerlink" title="5. shouldRetry 方法"></a>5. <code>shouldRetry</code> 方法</h3><p><code>shouldRetry</code> 方法决定是否应该重试 RPC 调用。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a *csAttempt)</span></span> shouldRetry(err <span class="hljs-type">error</span>) (<span class="hljs-type">bool</span>, <span class="hljs-type">error</span>) &#123;<br>    cs := a.cs<br><br>    <span class="hljs-keyword">if</span> cs.finished || cs.committed || a.drop &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>    &#125;<br>    <span class="hljs-keyword">if</span> a.transportStream == <span class="hljs-literal">nil</span> &amp;&amp; a.allowTransparentRetry &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>, <span class="hljs-literal">nil</span><br>    &#125;<br>    <br>    <span class="hljs-comment">// 等待尾部元数据</span><br>    unprocessed := <span class="hljs-literal">false</span><br>    <span class="hljs-keyword">if</span> a.transportStream != <span class="hljs-literal">nil</span> &#123;<br>        &lt;-a.transportStream.Done()<br>        unprocessed = a.transportStream.Unprocessed()<br>    &#125;<br>    <span class="hljs-keyword">if</span> cs.firstAttempt &amp;&amp; unprocessed &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>, <span class="hljs-literal">nil</span><br>    &#125;<br>    <span class="hljs-keyword">if</span> cs.cc.dopts.disableRetry &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>    &#125;<br><br>    <span class="hljs-comment">// 检查服务器推回</span><br>    pushback := <span class="hljs-number">0</span><br>    hasPushback := <span class="hljs-literal">false</span><br>    <span class="hljs-keyword">if</span> a.transportStream != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">if</span> !a.transportStream.TrailersOnly() &#123;<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>        &#125;<br><br>        sps := a.transportStream.Trailer()[<span class="hljs-string">&quot;grpc-retry-pushback-ms&quot;</span>]<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(sps) == <span class="hljs-number">1</span> &#123;<br>            <span class="hljs-keyword">var</span> e <span class="hljs-type">error</span><br>            <span class="hljs-keyword">if</span> pushback, e = strconv.Atoi(sps[<span class="hljs-number">0</span>]); e != <span class="hljs-literal">nil</span> || pushback &lt; <span class="hljs-number">0</span> &#123;<br>                cs.retryThrottler.throttle()<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>            &#125;<br>            hasPushback = <span class="hljs-literal">true</span><br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(sps) &gt; <span class="hljs-number">1</span> &#123;<br>            cs.retryThrottler.throttle()<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">// 检查状态码是否可重试</span><br>    <span class="hljs-keyword">var</span> code codes.Code<br>    <span class="hljs-keyword">if</span> a.transportStream != <span class="hljs-literal">nil</span> &#123;<br>        code = a.transportStream.Status().Code()<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        code = status.Code(err)<br>    &#125;<br><br>    rp := cs.methodConfig.RetryPolicy<br>    <span class="hljs-keyword">if</span> rp == <span class="hljs-literal">nil</span> || !rp.RetryableStatusCodes[code] &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>    &#125;<br><br>    <span class="hljs-comment">// 检查重试节流</span><br>    <span class="hljs-keyword">if</span> cs.retryThrottler.throttle() &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>    &#125;<br><br>    <span class="hljs-comment">// 检查重试次数</span><br>    <span class="hljs-keyword">if</span> cs.numRetries+<span class="hljs-number">1</span> &gt;= rp.MaxAttempts &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, err<br>    &#125;<br><br>    <span class="hljs-comment">// 计算重试延迟</span><br>    <span class="hljs-keyword">var</span> dur time.Duration<br>    <span class="hljs-keyword">if</span> hasPushback &#123;<br>        dur = time.Millisecond * time.Duration(pushback)<br>        cs.numRetriesSincePushback = <span class="hljs-number">0</span><br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        fact := math.Pow(rp.BackoffMultiplier, <span class="hljs-type">float64</span>(cs.numRetriesSincePushback))<br>        cur := min(<span class="hljs-type">float64</span>(rp.InitialBackoff)*fact, <span class="hljs-type">float64</span>(rp.MaxBackoff))<br>        cur *= <span class="hljs-number">0.8</span> + <span class="hljs-number">0.4</span>*rand.Float64()<br>        dur = time.Duration(<span class="hljs-type">int64</span>(cur))<br>        cs.numRetriesSincePushback++<br>    &#125;<br><br>    <span class="hljs-comment">// 等待重试延迟</span><br>    t := time.NewTimer(dur)<br>    <span class="hljs-keyword">select</span> &#123;<br>    <span class="hljs-keyword">case</span> &lt;-t.C:<br>        cs.numRetries++<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, <span class="hljs-literal">nil</span><br>    <span class="hljs-keyword">case</span> &lt;-cs.ctx.Done():<br>        t.Stop()<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>, status.FromContextError(cs.ctx.Err()).Err()<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="整体流程图"><a href="#整体流程图" class="headerlink" title="整体流程图"></a>整体流程图</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-161501.png" srcset="/img/loading.gif" lazyload alt="整体流程图"></p>
+<h2 id="详细调用关系"><a href="#详细调用关系" class="headerlink" title="详细调用关系"></a>详细调用关系</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-161554.png" srcset="/img/loading.gif" lazyload alt="详细调用关系"></p>
+<h2 id="重试机制详细流程"><a href="#重试机制详细流程" class="headerlink" title="重试机制详细流程"></a>重试机制详细流程</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-161626.png" srcset="/img/loading.gif" lazyload alt="重试机制详细流程"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><code>newClientStreamWithParams</code> 方法是 gRPC 客户端创建流式连接的核心方法，它负责初始化客户端流，设置各种参数，并创建与服务器的连接。该方法通过 <code>withRetry</code> 机制提供了强大的重试功能，确保在网络不稳定的情况下仍能可靠地完成 RPC 调用。</p>
+<p>整个流程涉及多个组件的协作，包括：</p>
+<ol>
+<li>上下文和超时管理</li>
+<li>用户自定义选项处理</li>
+<li>消息大小限制设置</li>
+<li>编解码器和压缩选项配置</li>
+<li>传输层选择和流创建</li>
+<li>重试机制</li>
+<li>二进制日志记录</li>
+<li>上下文清理</li>
+</ol>
+<p>这些组件共同工作，提供了一个功能完善、可靠的 gRPC 客户端流实现。
+        </p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">学习笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/grpc/" class="print-no-link">#grpc</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/05/31/Kafka-Controller%E6%8E%A7%E5%88%B6%E5%99%A8/" title="Kafka Controller控制器">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Kafka Controller控制器</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/05/26/grpc-go%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E4%BA%8C%EF%BC%9A%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%B8%8E%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5%E8%BF%87%E7%A8%8B/" title="grpc-go底层实现二：客户端与服务端建立连接过程">
+                        <span class="hidden-mobile">grpc-go底层实现二：客户端与服务端建立连接过程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

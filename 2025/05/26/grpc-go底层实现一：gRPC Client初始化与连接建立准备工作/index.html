@@ -1,0 +1,821 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta name="referrer" content="no-referrer"/>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zhangphh">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="基于grpc-go 的v1.72.0  gRPC 客户端创建过程分析分析 clientconn.go 中的 NewClient 方法及其调用的方法，详细阐述 gRPC 在创建客户端时的工作流程。 1. 客户端创建流程概述gRPC 客户端创建主要通过 NewClient 方法完成，该方法创建一个 ClientConn 对象，这是 gRPC 客户端的核心组件。整个创建过程可以分为以下几个主要阶段：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="grpc-go底层实现一：gRPC Client初始化与连接建立准备工作">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/05/26/grpc-go%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E4%B8%80%EF%BC%9AgRPC%20Client%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%8E%E8%BF%9E%E6%8E%A5%E5%BB%BA%E7%AB%8B%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C/index.html">
+<meta property="og:site_name" content="zhangphh">
+<meta property="og:description" content="基于grpc-go 的v1.72.0  gRPC 客户端创建过程分析分析 clientconn.go 中的 NewClient 方法及其调用的方法，详细阐述 gRPC 在创建客户端时的工作流程。 1. 客户端创建流程概述gRPC 客户端创建主要通过 NewClient 方法完成，该方法创建一个 ClientConn 对象，这是 gRPC 客户端的核心组件。整个创建过程可以分为以下几个主要阶段：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-160813.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-160928.png">
+<meta property="article:published_time" content="2025-05-26T14:31:55.000Z">
+<meta property="article:modified_time" content="2025-05-31T08:27:23.717Z">
+<meta property="article:author" content="zhangphh">
+<meta property="article:tag" content="grpc">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-160813.png">
+  
+  
+  
+  <title>grpc-go底层实现一：gRPC Client初始化与连接建立准备工作 - zhangphh</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"zhangphh-blogs.top","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>zhangphh的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="grpc-go底层实现一：gRPC Client初始化与连接建立准备工作"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        zhangphh
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-05-26 22:31" pubdate>
+          2025年5月26日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          25 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">grpc-go底层实现一：gRPC Client初始化与连接建立准备工作</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>基于grpc-go 的v1.72.0</p>
+</blockquote>
+<h1 id="gRPC-客户端创建过程分析"><a href="#gRPC-客户端创建过程分析" class="headerlink" title="gRPC 客户端创建过程分析"></a>gRPC 客户端创建过程分析</h1><p>分析 <code>clientconn.go</code> 中的 <code>NewClient</code> 方法及其调用的方法，详细阐述 gRPC 在创建客户端时的工作流程。</p>
+<h2 id="1-客户端创建流程概述"><a href="#1-客户端创建流程概述" class="headerlink" title="1. 客户端创建流程概述"></a>1. 客户端创建流程概述</h2><p>gRPC 客户端创建主要通过 <code>NewClient</code> 方法完成，该方法创建一个 <code>ClientConn</code> 对象，这是 gRPC 客户端的核心组件。整个创建过程可以分为以下几个主要阶段：</p>
+<ol>
+<li>初始化 <code>ClientConn</code> 结构体</li>
+<li>应用拨号选项（Dial Options）</li>
+<li>解析目标地址并获取解析器构建器</li>
+<li>设置拦截器链</li>
+<li>验证传输凭证</li>
+<li>解析服务配置</li>
+<li>初始化权限信息</li>
+<li>注册 Channelz</li>
+<li>初始化连接状态管理器和选择器</li>
+</ol>
+<p><img src="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-160813.png" srcset="/img/loading.gif" lazyload alt="客户端创建流程概述"></p>
+<figure class="highlight roboconf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs roboconf"><br><span class="hljs-comment">## 2. `NewClient` 方法详细分析</span><br><br><span class="hljs-comment">### 2.1 初始化 ClientConn 结构体</span><br><br>```go<br>cc := &amp;ClientConn&#123;<br>    <span class="hljs-attribute">target</span>: target,<br>    conns:  make(map[*addrConn]struct&#123;&#125;),<br>    dopts:  defaultDialOptions(), // 默认使用dns解析器<br>&#125;<br><br>cc<span class="hljs-variable">.retryThrottler</span><span class="hljs-variable">.Store</span>((*retryThrottler)(nil))<br>cc<span class="hljs-variable">.safeConfigSelector</span><span class="hljs-variable">.UpdateConfigSelector</span>(&amp;defaultConfigSelector&#123;nil&#125;)<br>cc<span class="hljs-variable">.ctx</span>, cc<span class="hljs-variable">.cancel</span> = context<span class="hljs-variable">.WithCancel</span>(context<span class="hljs-variable">.Background</span>())<br></code></pre></td></tr></table></figure>
+
+<p>这一步创建了 <code>ClientConn</code> 结构体，并初始化了基本字段：</p>
+<ul>
+<li><code>target</code>: 目标服务地址</li>
+<li><code>conns</code>: 存储所有子连接的映射</li>
+<li><code>dopts</code>: 默认拨号选项，包括默认使用 DNS 解析器</li>
+<li>初始化重试限流器、配置选择器和上下文</li>
+</ul>
+<h3 id="2-2-应用拨号选项"><a href="#2-2-应用拨号选项" class="headerlink" title="2.2 应用拨号选项"></a>2.2 应用拨号选项</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 应用全局拨号选项</span><br><span class="hljs-keyword">if</span> !disableGlobalOpts &#123;<br>    <span class="hljs-keyword">for</span> _, opt := <span class="hljs-keyword">range</span> globalDialOptions &#123;<br>        opt.apply(&amp;cc.dopts)<br>    &#125;<br>&#125;<br><br><span class="hljs-comment">// 应用用户提供的拨号选项</span><br><span class="hljs-keyword">for</span> _, opt := <span class="hljs-keyword">range</span> opts &#123;<br>    opt.apply(&amp;cc.dopts)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>gRPC 使用选项模式来配置客户端连接。这一步应用了两类选项：</p>
+<ul>
+<li>全局拨号选项：适用于所有客户端连接的默认选项</li>
+<li>用户提供的拨号选项：用户在创建连接时指定的特定选项</li>
+</ul>
+<h3 id="2-3-解析目标地址并获取解析器构建器"><a href="#2-3-解析目标地址并获取解析器构建器" class="headerlink" title="2.3 解析目标地址并获取解析器构建器"></a>2.3 解析目标地址并获取解析器构建器</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> err := cc.initParsedTargetAndResolverBuilder(); err != <span class="hljs-literal">nil</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>initParsedTargetAndResolverBuilder</code> 方法解析目标地址并获取相应的解析器构建器：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> initParsedTargetAndResolverBuilder() <span class="hljs-type">error</span> &#123;<br>    logger.Infof(<span class="hljs-string">&quot;original dial target is: %q&quot;</span>, cc.target)<br><br>    <span class="hljs-keyword">var</span> rb resolver.Builder<br>    parsedTarget, err := parseTarget(cc.target)<br>    <span class="hljs-keyword">if</span> err == <span class="hljs-literal">nil</span> &#123;<br>        rb = cc.getResolver(parsedTarget.URL.Scheme) <span class="hljs-comment">// 获取具体resolverBuilder, 如自定义等</span><br>        <span class="hljs-keyword">if</span> rb != <span class="hljs-literal">nil</span> &#123;<br>            cc.parsedTarget = parsedTarget<br>            cc.resolverBuilder = rb<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">// 如果目标地址没有包含方案或指定了未注册的方案，则使用默认方案</span><br>    defScheme := cc.dopts.defaultScheme <span class="hljs-comment">// 默认使用dns</span><br>    <span class="hljs-keyword">if</span> internal.UserSetDefaultScheme &#123;<br>        defScheme = resolver.GetDefaultScheme()<br>    &#125;<br><br>    canonicalTarget := defScheme + <span class="hljs-string">&quot;://&quot;</span> + <span class="hljs-string">&quot;/&quot;</span> + cc.target<br><br>    parsedTarget, err = parseTarget(canonicalTarget)<br>    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> err<br>    &#125;<br>    rb = cc.getResolver(parsedTarget.URL.Scheme) <span class="hljs-comment">// 获取默认的dns resolverBuilder</span><br>    <span class="hljs-keyword">if</span> rb == <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> fmt.Errorf(<span class="hljs-string">&quot;could not get resolver for default scheme: %q&quot;</span>, parsedTarget.URL.Scheme)<br>    &#125;<br>    cc.parsedTarget = parsedTarget<br>    cc.resolverBuilder = rb<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个方法的主要功能是：</p>
+<ol>
+<li>尝试解析用户提供的目标地址，获取其中的方案（scheme）</li>
+<li>如果解析成功且能找到对应的解析器构建器，则使用它</li>
+<li>如果解析失败或找不到对应的解析器构建器，则使用默认方案（通常是 DNS）</li>
+<li>最终将解析后的目标地址和解析器构建器存储在 <code>ClientConn</code> 中</li>
+</ol>
+<h3 id="2-4-设置拦截器链"><a href="#2-4-设置拦截器链" class="headerlink" title="2.4 设置拦截器链"></a>2.4 设置拦截器链</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go">chainUnaryClientInterceptors(cc)  <span class="hljs-comment">// 设置一元拦截器</span><br>chainStreamClientInterceptors(cc) <span class="hljs-comment">// 设置流式拦截器</span><br></code></pre></td></tr></table></figure>
+
+<p>这一步设置了两种类型的拦截器链：</p>
+<ul>
+<li>一元拦截器：用于拦截普通 RPC 调用</li>
+<li>流式拦截器：用于拦截流式 RPC 调用</li>
+</ul>
+<p>拦截器允许在 RPC 调用前后执行自定义逻辑，如日志记录、认证、监控等。</p>
+<h3 id="2-5-验证传输凭证"><a href="#2-5-验证传输凭证" class="headerlink" title="2.5 验证传输凭证"></a>2.5 验证传输凭证</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> err := cc.validateTransportCredentials(); err != <span class="hljs-literal">nil</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>validateTransportCredentials</code> 方法验证传输凭证的有效性，确保：</p>
+<ol>
+<li>至少配置了传输凭证或凭证包</li>
+<li>不同时配置传输凭证和凭证包</li>
+<li>如果配置了凭证包，其中包含有效的传输凭证</li>
+<li>如果使用不安全传输，确保没有需要传输层安全的调用凭证</li>
+</ol>
+<h3 id="2-6-解析服务配置"><a href="#2-6-解析服务配置" class="headerlink" title="2.6 解析服务配置"></a>2.6 解析服务配置</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> cc.dopts.defaultServiceConfigRawJSON != <span class="hljs-literal">nil</span> &#123;<br>    scpr := parseServiceConfig(*cc.dopts.defaultServiceConfigRawJSON, cc.dopts.maxCallAttempts)<br>    <span class="hljs-keyword">if</span> scpr.Err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;%s: %v&quot;</span>, invalidDefaultServiceConfigErrPrefix, scpr.Err)<br>    &#125;<br>    cc.dopts.defaultServiceConfig, _ = scpr.Config.(*ServiceConfig)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果用户提供了默认服务配置（如超时设置、重试策略、负载均衡策略等），这一步会解析该配置并存储在 <code>ClientConn</code> 中。</p>
+<h3 id="2-7-初始化权限信息"><a href="#2-7-初始化权限信息" class="headerlink" title="2.7 初始化权限信息"></a>2.7 初始化权限信息</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">if</span> err = cc.initAuthority(); err != <span class="hljs-literal">nil</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>initAuthority</code> 方法确定通道的权限信息，按以下优先级：</p>
+<ol>
+<li>用户通过 <code>WithAuthority</code> 拨号选项指定的权限覆盖</li>
+<li>凭证对认证握手的服务器名称的概念</li>
+<li>拨号目标中的端点形式 “scheme:&#x2F;&#x2F;[authority]&#x2F;endpoint”</li>
+</ol>
+<h3 id="2-8-注册-Channelz-和初始化连接状态管理器"><a href="#2-8-注册-Channelz-和初始化连接状态管理器" class="headerlink" title="2.8 注册 Channelz 和初始化连接状态管理器"></a>2.8 注册 Channelz 和初始化连接状态管理器</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go">cc.channelzRegistration(target)<br>cc.csMgr = newConnectivityStateManager(cc.ctx, cc.channelz)<br>cc.pickerWrapper = newPickerWrapper(cc.dopts.copts.StatsHandlers)<br></code></pre></td></tr></table></figure>
+
+<p>这些步骤完成了：</p>
+<ul>
+<li>向 Channelz 注册 ClientConn，用于监控和调试</li>
+<li>创建连接状态管理器，管理连接的状态变化</li>
+<li>创建选择器包装器，用于选择子连接进行 RPC 调用</li>
+</ul>
+<h3 id="2-9-初始化空闲状态"><a href="#2-9-初始化空闲状态" class="headerlink" title="2.9 初始化空闲状态"></a>2.9 初始化空闲状态</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go">cc.initIdleStateLocked()<br>cc.idlenessMgr = idle.NewManager((*idler)(cc), cc.dopts.idleTimeout)<br></code></pre></td></tr></table></figure>
+
+<p>这一步初始化了空闲状态相关的组件，包括：</p>
+<ul>
+<li>初始化解析器包装器、负载均衡器包装器和首次解析事件</li>
+<li>创建空闲管理器，管理连接的空闲状态</li>
+</ul>
+<h2 id="3-连接建立过程"><a href="#3-连接建立过程" class="headerlink" title="3. 连接建立过程"></a>3. 连接建立过程</h2><p><code>NewClient</code> 方法只创建了 <code>ClientConn</code> 对象，但并未实际建立连接。实际连接是在需要时（如进行 RPC 调用时，这里以<code>SayHello</code>方法为例）通过 <code>Connect</code> 方法建立的：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> Connect() &#123;<br>    <span class="hljs-keyword">if</span> err := cc.idlenessMgr.ExitIdleMode(); err != <span class="hljs-literal">nil</span> &#123;<br>        cc.addTraceEvent(err.Error())<br>        <span class="hljs-keyword">return</span><br>    &#125;<br>    <span class="hljs-comment">// 如果 ClientConn 不处于空闲模式，需要调用负载均衡策略的 ExitIdle 方法来创建连接</span><br>    cc.mu.Lock()<br>    cc.balancerWrapper.exitIdle()<br>    cc.mu.Unlock()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>Connect</code> 方法的主要功能是：</p>
+<ol>
+<li>退出空闲模式，这会重新创建名称解析器和负载均衡器</li>
+<li>调用负载均衡器的 <code>exitIdle</code> 方法，触发连接创建</li>
+</ol>
+<h3 id="3-1-退出空闲模式"><a href="#3-1-退出空闲模式" class="headerlink" title="3.1 退出空闲模式"></a>3.1 退出空闲模式</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> exitIdleMode() (err <span class="hljs-type">error</span>) &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">if</span> err := cc.resolverWrapper.start(); err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> err<br>    &#125;<br>    cc.addTraceEvent(<span class="hljs-string">&quot;exiting idle mode&quot;</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>退出空闲模式的关键是启动解析器包装器，这会触发名称解析过程。</p>
+<h3 id="3-2-解析器包装器启动"><a href="#3-2-解析器包装器启动" class="headerlink" title="3.2 解析器包装器启动"></a>3.2 解析器包装器启动</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(ccr *ccResolverWrapper)</span></span> start() <span class="hljs-type">error</span> &#123;<br>    errCh := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> <span class="hljs-type">error</span>)<br>    ccr.serializer.TrySchedule(<span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(ctx context.Context)</span></span> &#123;<br>        <span class="hljs-comment">// ...</span><br>        opts := resolver.BuildOptions&#123;...&#125;<br>        <span class="hljs-keyword">var</span> err <span class="hljs-type">error</span><br>        <span class="hljs-keyword">if</span> ccr.cc.dopts.copts.Dialer != <span class="hljs-literal">nil</span> || !ccr.cc.dopts.useProxy &#123;<br>            ccr.resolver, err = ccr.cc.resolverBuilder.Build(ccr.cc.parsedTarget, ccr, opts)<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            ccr.resolver, err = delegatingresolver.New(ccr.cc.parsedTarget, ccr, opts, ccr.cc.resolverBuilder, ccr.cc.dopts.enableLocalDNSResolution)<br>        &#125;<br>        errCh &lt;- err<br>    &#125;)<br>    <span class="hljs-keyword">return</span> &lt;-errCh<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>解析器包装器启动时，会根据配置创建适当的解析器：</p>
+<ol>
+<li>如果配置了自定义拨号器或禁用代理，则直接使用解析器构建器创建解析器</li>
+<li>否则，创建委托解析器，支持代理功能</li>
+</ol>
+<h3 id="3-3-解析器更新状态"><a href="#3-3-解析器更新状态" class="headerlink" title="3.3 解析器更新状态"></a>3.3 解析器更新状态</h3><p>解析器解析目标地址后，会通过 <code>UpdateState</code> 方法将解析结果通知给 <code>ClientConn</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(ccr *ccResolverWrapper)</span></span> UpdateState(s resolver.State) <span class="hljs-type">error</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    ccr.curState = s<br>    <span class="hljs-keyword">return</span> ccr.cc.updateResolverStateAndUnlock(s, <span class="hljs-literal">nil</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-4-更新解析器状态"><a href="#3-4-更新解析器状态" class="headerlink" title="3.4 更新解析器状态"></a>3.4 更新解析器状态</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> updateResolverStateAndUnlock(s resolver.State, err <span class="hljs-type">error</span>) <span class="hljs-type">error</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">var</span> ret <span class="hljs-type">error</span><br>    <span class="hljs-keyword">var</span> balCfg serviceconfig.LoadBalancingConfig<br>    <span class="hljs-keyword">if</span> sc != <span class="hljs-literal">nil</span> &#123;<br>        balCfg, ret = cc.applyServiceConfigAndBalancer(sc, s, err)<br>    &#125;<br>    bw := cc.balancerWrapper<br>    uccsErr := bw.updateClientConnState(&amp;balancer.ClientConnState&#123;ResolverState: s, BalancerConfig: balCfg&#125;)<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">return</span> ret<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个方法的主要功能是：</p>
+<ol>
+<li>应用服务配置和负载均衡器</li>
+<li>更新负载均衡器的客户端连接状态</li>
+</ol>
+<h3 id="3-5-负载均衡器更新状态"><a href="#3-5-负载均衡器更新状态" class="headerlink" title="3.5 负载均衡器更新状态"></a>3.5 负载均衡器更新状态</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(ccb *ccBalancerWrapper)</span></span> updateClientConnState(ccs *balancer.ClientConnState) <span class="hljs-type">error</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    name := gracefulswitch.ChildName(ccs.BalancerConfig)<br>    <span class="hljs-keyword">if</span> ccb.curBalancerName != name &#123;<br>        ccb.curBalancerName = name<br>        channelz.Infof(logger, ccb.cc.channelz, <span class="hljs-string">&quot;Channel switches to new LB policy %q&quot;</span>, name)<br>    &#125;<br>    err := ccb.balancer.UpdateClientConnState(*ccs)<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">return</span> err<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>负载均衡器更新状态时，会：</p>
+<ol>
+<li>确定要使用的负载均衡策略名称</li>
+<li>如果需要，切换到新的负载均衡策略</li>
+<li>更新负载均衡器的客户端连接状态</li>
+</ol>
+<h2 id="4-负载均衡器创建子连接"><a href="#4-负载均衡器创建子连接" class="headerlink" title="4. 负载均衡器创建子连接"></a>4. 负载均衡器创建子连接</h2><p>负载均衡器根据解析器提供的地址创建子连接：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(ccb *ccBalancerWrapper)</span></span> NewSubConn(addrs []resolver.Address, opts balancer.NewSubConnOptions) (balancer.SubConn, <span class="hljs-type">error</span>) &#123;<br>    <span class="hljs-comment">// ...</span><br>    ac, err := ccb.cc.newAddrConnLocked(addrs, opts)<br>    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-comment">// ...</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>    &#125;<br>    acbw := &amp;acBalancerWrapper&#123;...&#125;<br>    ac.acbw = acbw<br>    <span class="hljs-keyword">return</span> acbw, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-1-创建地址连接"><a href="#4-1-创建地址连接" class="headerlink" title="4.1 创建地址连接"></a>4.1 创建地址连接</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(cc *ClientConn)</span></span> newAddrConnLocked(addrs []resolver.Address, opts balancer.NewSubConnOptions) (*addrConn, <span class="hljs-type">error</span>) &#123;<br>    <span class="hljs-comment">// ...</span><br>    ac := &amp;addrConn&#123;<br>        state:        connectivity.Idle,<br>        cc:           cc,<br>        addrs:        copyAddresses(addrs),<br>        scopts:       opts,<br>        dopts:        cc.dopts,<br>        channelz:     channelz.RegisterSubChannel(cc.channelz, <span class="hljs-string">&quot;&quot;</span>),<br>        resetBackoff: <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> <span class="hljs-keyword">struct</span>&#123;&#125;),<br>    &#125;<br>    ac.ctx, ac.cancel = context.WithCancel(cc.ctx)<br>    <span class="hljs-comment">// ...</span><br>    cc.conns[ac] = <span class="hljs-keyword">struct</span>&#123;&#125;&#123;&#125;<br>    <span class="hljs-keyword">return</span> ac, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>创建地址连接时：</p>
+<ol>
+<li>创建 <code>addrConn</code> 对象，初始状态为 <code>Idle</code></li>
+<li>设置地址、选项和上下文</li>
+<li>注册子通道到 Channelz</li>
+<li>将地址连接添加到 <code>ClientConn</code> 的连接映射中</li>
+</ol>
+<h3 id="4-2-连接地址"><a href="#4-2-连接地址" class="headerlink" title="4.2 连接地址"></a>4.2 连接地址</h3><p>当负载均衡器调用 <code>Connect</code> 方法时，地址连接开始实际建立连接：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(acbw *acBalancerWrapper)</span></span> Connect() &#123;<br>    <span class="hljs-keyword">go</span> acbw.ac.connect()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(ac *addrConn)</span></span> connect() &#123;<br>    <span class="hljs-comment">// ...</span><br>    ac.mu.Lock()<br>    <span class="hljs-keyword">if</span> ac.state == connectivity.Shutdown &#123;<br>        ac.mu.Unlock()<br>        <span class="hljs-keyword">return</span><br>    &#125;<br>    <span class="hljs-comment">// 设置状态为 Connecting</span><br>    ac.updateConnectivityState(connectivity.Connecting, <span class="hljs-literal">nil</span>)<br>    ac.mu.Unlock()<br><br>    <span class="hljs-comment">// 尝试所有地址</span><br>    err := ac.tryAllAddrs(addrs, connectDeadline)<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-尝试所有地址"><a href="#4-3-尝试所有地址" class="headerlink" title="4.3 尝试所有地址"></a>4.3 尝试所有地址</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(ac *addrConn)</span></span> tryAllAddrs(addrs []resolver.Address, connectDeadline time.Time) <span class="hljs-type">error</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">for</span> _, addr := <span class="hljs-keyword">range</span> addrs &#123;<br>        err := ac.createTransport(addr, connectDeadline, <span class="hljs-literal">true</span>)<br>        <span class="hljs-keyword">if</span> err == <span class="hljs-literal">nil</span> &#123;<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>        &#125;<br>        <span class="hljs-comment">// ...</span><br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个方法尝试连接所有解析到的地址，直到成功或全部失败。</p>
+<h3 id="4-4-创建传输"><a href="#4-4-创建传输" class="headerlink" title="4.4 创建传输"></a>4.4 创建传输</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(ac *addrConn)</span></span> createTransport(addr resolver.Address, connectDeadline time.Time, skipReset <span class="hljs-type">bool</span>) <span class="hljs-type">error</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    newTr, err := transport.NewClientTransport(connectCtx, ac.cc.ctx, addr, ac.cc.dopts, ac)<br>    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-comment">// ...</span><br>        <span class="hljs-keyword">return</span> err<br>    &#125;<br>    ac.mu.Lock()<br>    <span class="hljs-keyword">if</span> ac.state == connectivity.Shutdown &#123;<br>        ac.mu.Unlock()<br>        newTr.Close()<br>        <span class="hljs-keyword">return</span> errConnClosing<br>    &#125;<br>    ac.curAddr = addr<br>    ac.transport = newTr<br>    ac.updateConnectivityState(connectivity.Ready, <span class="hljs-literal">nil</span>)<br>    ac.mu.Unlock()<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>创建传输时：</p>
+<ol>
+<li>调用 <code>transport.NewClientTransport</code> 创建客户端传输</li>
+<li>如果成功，更新当前地址和传输</li>
+<li>将连接状态更新为 <code>Ready</code></li>
+</ol>
+<h2 id="5-pickFirst-负载均衡策略"><a href="#5-pickFirst-负载均衡策略" class="headerlink" title="5. pickFirst 负载均衡策略"></a>5. pickFirst 负载均衡策略</h2><p><code>pickFirst</code> 是 gRPC 的默认负载均衡策略，它的实现位于 <code>balancer/pickfirst/pickfirst.go</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> pickfirstBalancer <span class="hljs-keyword">struct</span> &#123;<br>    cc      balancer.ClientConn<br>    subConn balancer.SubConn<br><br>    resolverErr <span class="hljs-type">error</span> <span class="hljs-comment">// the last error reported by the resolver; cleared on successful resolution</span><br>    connErr     <span class="hljs-type">error</span> <span class="hljs-comment">// the last connection error; cleared upon leaving TransientFailure</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-1-更新客户端连接状态"><a href="#5-1-更新客户端连接状态" class="headerlink" title="5.1 更新客户端连接状态"></a>5.1 更新客户端连接状态</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(b *pickfirstBalancer)</span></span> UpdateClientConnState(state balancer.ClientConnState) <span class="hljs-type">error</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(state.ResolverState.Endpoints) == <span class="hljs-number">0</span> &#123;<br>        <span class="hljs-keyword">return</span> balancer.ErrBadResolverState<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> b.subConn != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-comment">// 更新现有子连接的地址</span><br>        b.cc.UpdateAddresses(b.subConn, state.ResolverState.Endpoints[<span class="hljs-number">0</span>].Addresses)<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>    &#125;<br><br>    <span class="hljs-comment">// 创建新的子连接</span><br>    sc, err := b.cc.NewSubConn(state.ResolverState.Endpoints[<span class="hljs-number">0</span>].Addresses, balancer.NewSubConnOptions&#123;&#125;)<br>    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> err<br>    &#125;<br>    b.subConn = sc<br>    b.subConn.Connect()<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>pickFirst</code> 策略的特点是：</p>
+<ol>
+<li>只使用解析器提供的第一个端点</li>
+<li>只创建一个子连接</li>
+<li>如果已有子连接，则只更新其地址</li>
+</ol>
+<h3 id="5-2-更新子连接状态"><a href="#5-2-更新子连接状态" class="headerlink" title="5.2 更新子连接状态"></a>5.2 更新子连接状态</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(b *pickfirstBalancer)</span></span> updateSubConnState(sc balancer.SubConn, state balancer.SubConnState) &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">switch</span> state.ConnectivityState &#123;<br>    <span class="hljs-keyword">case</span> connectivity.Ready:<br>        b.resolverErr = <span class="hljs-literal">nil</span><br>        b.connErr = <span class="hljs-literal">nil</span><br>        b.cc.UpdateState(balancer.State&#123;<br>            ConnectivityState: connectivity.Ready,<br>            Picker:            &amp;picker&#123;sc: sc&#125;,<br>        &#125;)<br>    <span class="hljs-keyword">case</span> connectivity.Connecting:<br>        b.cc.UpdateState(balancer.State&#123;<br>            ConnectivityState: connectivity.Connecting,<br>            Picker:            &amp;picker&#123;err: balancer.ErrNoSubConnAvailable&#125;,<br>        &#125;)<br>    <span class="hljs-keyword">case</span> connectivity.Idle:<br>        b.cc.UpdateState(balancer.State&#123;<br>            ConnectivityState: connectivity.Idle,<br>            Picker:            &amp;idlePicker&#123;sc: sc&#125;,<br>        &#125;)<br>    <span class="hljs-keyword">case</span> connectivity.TransientFailure:<br>        b.connErr = state.ConnectionError<br>        b.cc.UpdateState(balancer.State&#123;<br>            ConnectivityState: connectivity.TransientFailure,<br>            Picker:            &amp;picker&#123;err: state.ConnectionError&#125;,<br>        &#125;)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>当子连接状态变化时，<code>pickFirst</code> 策略会：</p>
+<ol>
+<li>更新连接错误状态</li>
+<li>根据子连接状态创建相应的选择器</li>
+<li>更新客户端连接状态</li>
+</ol>
+<h3 id="5-3-选择器实现"><a href="#5-3-选择器实现" class="headerlink" title="5.3 选择器实现"></a>5.3 选择器实现</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> picker <span class="hljs-keyword">struct</span> &#123;<br>    sc  balancer.SubConn<br>    err <span class="hljs-type">error</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *picker)</span></span> Pick(balancer.PickInfo) (balancer.PickResult, <span class="hljs-type">error</span>) &#123;<br>    <span class="hljs-keyword">if</span> p.err != <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> balancer.PickResult&#123;&#125;, p.err<br>    &#125;<br>    <span class="hljs-keyword">return</span> balancer.PickResult&#123;SubConn: p.sc&#125;, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>pickFirst</code> 策略的选择器非常简单：</p>
+<ol>
+<li>如果有错误，返回错误</li>
+<li>否则，始终返回同一个子连接</li>
+</ol>
+<h2 id="6-完整的客户端创建和连接流程"><a href="#6-完整的客户端创建和连接流程" class="headerlink" title="6. 完整的客户端创建和连接流程"></a>6. 完整的客户端创建和连接流程</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/mermaid-diagram-2025-05-31-160928.png" srcset="/img/loading.gif" lazyload alt="完整客户端创建和连接流程"></p>
+<h2 id="7-总结"><a href="#7-总结" class="headerlink" title="7. 总结"></a>7. 总结</h2><p>gRPC 客户端创建过程是一个复杂而精心设计的流程，主要包括以下几个关键部分：</p>
+<ol>
+<li><p><strong>ClientConn 初始化</strong>：创建并配置 ClientConn 对象，应用各种拨号选项。</p>
+</li>
+<li><p><strong>名称解析</strong>：通过解析器将目标地址解析为具体的网络地址。</p>
+</li>
+<li><p><strong>负载均衡</strong>：使用负载均衡策略（默认为 pickFirst）选择要连接的地址。</p>
+</li>
+<li><p><strong>连接建立</strong>：创建子连接并建立实际的网络连接。</p>
+</li>
+<li><p><strong>状态管理</strong>：管理连接的各种状态变化，如 Idle、Connecting、Ready、TransientFailure 等。</p>
+</li>
+</ol>
+<p>这种设计使得 gRPC 能够支持各种复杂的连接场景，如名称解析、负载均衡、故障恢复等，同时保持了良好的可扩展性和可配置性。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">学习笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/grpc/" class="print-no-link">#grpc</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/05/26/grpc-go%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E4%BA%8C%EF%BC%9A%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%B8%8E%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5%E8%BF%87%E7%A8%8B/" title="grpc-go底层实现二：客户端与服务端建立连接过程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">grpc-go底层实现二：客户端与服务端建立连接过程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/04/12/HighWaterMark%E4%B8%8E%E5%89%AF%E6%9C%AC%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6/" title="HighWaterMark与副本同步机制">
+                        <span class="hidden-mobile">HighWaterMark与副本同步机制</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
