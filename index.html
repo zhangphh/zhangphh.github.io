@@ -230,6 +230,67 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2025/06/07/MySQL-innodb%E9%94%81%E6%9C%BA%E5%88%B6%E5%8E%9F%E7%90%86/" target="_self">
+          MySQL innodb锁机制原理
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/06/07/MySQL-innodb%E9%94%81%E6%9C%BA%E5%88%B6%E5%8E%9F%E7%90%86/" target="_self">
+        <div>
+          1.锁的类型1.1 占有模式 共享锁 Share Lock&#x2F;S锁 排他锁 Exclusive Lock&#x2F;X锁      S X    S 兼容 不兼容   X 不兼容 不兼容    对行记录加X锁insert、update、delete以及显式的 for update 语句都会对行记录加X锁  1234select * from table_name where id = 1
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-06-07 10:22" pubdate>
+              2025-06-07
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">学习笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2025/05/31/kafka%E5%88%86%E5%8C%BA%E9%87%8D%E5%88%86%E9%85%8D%E4%B8%8ERebalance%E8%BF%87%E7%A8%8B/" target="_self">
           kafka分区重分配与Rebalance过程
         </a>
@@ -778,69 +839,6 @@
               <a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/">#中间件</a>
             
               <a href="/tags/kafka/">#kafka</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/04/12/chat%E8%81%8A%E5%A4%A9%E7%B3%BB%E7%BB%9F%E6%80%9D%E8%80%83%E4%B9%8B%E4%BA%8C/" target="_self">
-          chat聊天系统思考之二
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/04/12/chat%E8%81%8A%E5%A4%A9%E7%B3%BB%E7%BB%9F%E6%80%9D%E8%80%83%E4%B9%8B%E4%BA%8C/" target="_self">
-        <div>
-          1、前言考虑下面几个条件下如何提升kafka的消费速度  消息要求严格有序，如chat聊天消息 业务处理速度慢，如处理一条数据需要100ms 分片不合理，如有的分区很闲，有的分区消息数量积压  2、解决方案1、顺序问题关于消息消费时存在先后顺序问题，在chat聊天系统思考之一中已经加以说明。具体实现大致为对同一会话、帖子Id等维度放入同一分区中，如使用Id % 分区数，如下图：上面的解决方案是将同
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-04-12 14:25" pubdate>
-              2025-04-12
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%B7%A5%E4%BD%9C%E6%80%BB%E7%BB%93/" class="category-chain-item">工作总结</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E5%B7%A5%E4%BD%9C%E6%80%BB%E7%BB%93/">#工作总结</a>
-            
-              <a href="/tags/%E8%81%8A%E5%A4%A9%E7%B3%BB%E7%BB%9F/">#聊天系统</a>
             
           </div>
         
