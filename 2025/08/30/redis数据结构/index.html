@@ -1,0 +1,763 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta name="referrer" content="no-referrer"/>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zhangphh">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="redis 数据结构1 SDS 简单动态字符串 len 字段，O(1)获取长度，二进制安全 alloc 字段，分配的空间长度 flags sds类型 sdshdr5、sdshdr8、sdshdr16、sdshdr32、sdshdr64，五种类型结构体灵活保存不同长度字符串 取消内存对齐，进一步节省内存   buf数组，字节数组，不仅可以保存字符串，还能保存二进制数据  扩容规则  新长度 &lt;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis数据结构">
+<meta property="og:url" content="https://zhangphh-blogs.top/2025/08/30/redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/index.html">
+<meta property="og:site_name" content="zhangphh">
+<meta property="og:description" content="redis 数据结构1 SDS 简单动态字符串 len 字段，O(1)获取长度，二进制安全 alloc 字段，分配的空间长度 flags sds类型 sdshdr5、sdshdr8、sdshdr16、sdshdr32、sdshdr64，五种类型结构体灵活保存不同长度字符串 取消内存对齐，进一步节省内存   buf数组，字节数组，不仅可以保存字符串，还能保存二进制数据  扩容规则  新长度 &lt;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250829110608909.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250829160832583.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250829163154947.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250829164800583.png">
+<meta property="og:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250829170335320.png">
+<meta property="article:published_time" content="2025-08-30T04:35:16.000Z">
+<meta property="article:modified_time" content="2025-08-30T04:44:24.025Z">
+<meta property="article:author" content="zhangphh">
+<meta property="article:tag" content="中间件">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://gitee.com/zhangphh/images-collections/raw/master/20250829110608909.png">
+  
+  
+  
+  <title>redis数据结构 - zhangphh</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"zhangphh-blogs.top","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>zhangphh的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="redis数据结构"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        zhangphh
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-08-30 12:35" pubdate>
+          2025年8月30日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          13 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">redis数据结构</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="redis-数据结构"><a href="#redis-数据结构" class="headerlink" title="redis 数据结构"></a>redis 数据结构</h1><h2 id="1-SDS-简单动态字符串"><a href="#1-SDS-简单动态字符串" class="headerlink" title="1 SDS 简单动态字符串"></a>1 SDS 简单动态字符串</h2><ul>
+<li>len 字段，O(1)获取长度，二进制安全</li>
+<li>alloc 字段，分配的空间长度</li>
+<li>flags sds类型<ul>
+<li>sdshdr5、sdshdr8、sdshdr16、sdshdr32、sdshdr64，五种类型结构体灵活保存不同长度字符串</li>
+<li>取消内存对齐，进一步节省内存</li>
+</ul>
+</li>
+<li>buf数组，字节数组，不仅可以保存字符串，还能保存二进制数据</li>
+</ul>
+<p><strong>扩容规则</strong></p>
+<ul>
+<li>新长度 &lt; alloc - len: 无需扩容</li>
+<li>新长度 &gt; alloc - len &amp;&amp; 新长度 &lt; 1MB: len&#x3D;新长度 &amp;&amp; alloc &#x3D; 2*新长度</li>
+<li>新长度 &gt; alloc - len &amp;&amp; 新长度 &lt; 1MB: len&#x3D;新长度 &amp;&amp; alloc &#x3D; 1MB</li>
+</ul>
+<h2 id="2-ZipList-压缩列表"><a href="#2-ZipList-压缩列表" class="headerlink" title="2 ZipList 压缩列表"></a>2 ZipList 压缩列表</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829110608909.png" srcset="/img/loading.gif" lazyload alt="ZipList"></p>
+<ul>
+<li>zlbytes: 整个压缩列表占用内存<strong>字节</strong>数</li>
+<li>zltail: 记录尾部节点距离起始地址字节数，即尾节点偏移量</li>
+<li>zllen: entry节点数量</li>
+<li>zlend: 尾部节点，固定值0xFF(255)</li>
+<li>entry: 节点<ul>
+<li>prevLen: 前一个节点长度，便于从后往前遍历<ul>
+<li>如果前一个entry节点长度小于254字节，则用一个字节保存</li>
+<li>如果前一个entry节点超过254字节，则当前节点的prevlen使用5个字节保存</li>
+</ul>
+</li>
+<li>encoding: 用于区分entry值的类型和长度，针对不同类型分配对应数据结构，节约内存</li>
+<li>data: 节点实际存储数据，长度和类型由encoding字段控制</li>
+</ul>
+</li>
+</ul>
+<p><strong>查找原理</strong></p>
+<ul>
+<li>查找头尾节点：根据ziplist的头部zllen等即可O(1)得到</li>
+<li>查找非头尾节点：顺序遍历查找，O(n)</li>
+</ul>
+<p>因此，ziplist适合在数据量较少时使用，不适合保存过多的元素。</p>
+<p><strong>连锁更新问题</strong><br>ziplist在更新或新增节点时，如果空间不够是需要重新分配的，当新增的元素过大时，后导致后续节点的prevlen变动，<br>如果后续节点新的prevlen阈值大于254时会扩充为5个字节，极端情况下可能会导致后续元素的 prevlen 占用空间都发生变化，<br>从而导致连锁更新问题，导致每个元素都会重新分配空间，造成性能下降。</p>
+<p>因此，ziplist不适合在大规模数据下使用，数据较少时即使是发生了连锁更新也是可以接受的</p>
+<h2 id="3-哈希表"><a href="#3-哈希表" class="headerlink" title="3 哈希表"></a>3 哈希表</h2><p><strong>渐进式rehash</strong><br>为避免hash冲突过多导致哈系统中数据过多性能下降问题，哈希表会在满足特定条件时执行扩容，扩为原来的两倍大小。<br>为避免数据copy带来的巨大开销，redis采用了渐进式哈希思想，即在后续的增删改查时把相关的数据存储到新hash表中。</p>
+<p><strong>rehash触发条件</strong><br>factor &#x3D; 节点数量&#x2F;hashTable大小</p>
+<ul>
+<li>当factor大于1等于，并且redis没有在执行bgsave或berewriteaof命令，即redis没有在执行RDB快照或AOF重写时</li>
+<li>当factor大于等于5，hash冲突过于严重，不管有没有在进行RDB快照或AOF重写都会强制执行rehash</li>
+</ul>
+<h2 id="4-SkipList跳表"><a href="#4-SkipList跳表" class="headerlink" title="4 SkipList跳表"></a>4 SkipList跳表</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829160832583.png" srcset="/img/loading.gif" lazyload alt="跳表"></p>
+<p><strong>查询过程</strong></p>
+<ul>
+<li>先比较权重，如果目标节点权重比当前节点权重大，则访问该层下一节点</li>
+<li>如果目标节点权重与当前节点权重相等，则比较sds值，如果目标节点的sds值大于当前节点的sds值，则访问该层下一节点</li>
+</ul>
+<p><strong>新增节点层级</strong></p>
+<ul>
+<li>创建节点时会生成一个0~1的随机数，当小于0.25时，则层数就会加一，直到大于0.25。因此有25%的概率升级层级</li>
+<li>新节点在第二层的概率为25%，第三层为25% * 25%，以此类推</li>
+</ul>
+<p><strong>为什么用跳表而不是红黑树等平衡树</strong></p>
+<ul>
+<li>实现简单，跳表是链表+多级索引，插入删除只需要修改局部指针，不会像平衡树那样进行复杂的自旋</li>
+<li>性能和平衡树相近，可达O(log n)，代码实现更轻量</li>
+<li>更好的范围查询，多级索引+水平指针，不需要进行中序遍历</li>
+<li>内存占用更少，相对于红黑树要存储父节点、颜色、左右指针等额外信息，跳过整体内存可控</li>
+</ul>
+<h2 id="5-QuickList"><a href="#5-QuickList" class="headerlink" title="5 QuickList"></a>5 QuickList</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829163154947.png" srcset="/img/loading.gif" lazyload alt="QuickList"></p>
+<p>quicklist是一个双向链表，里面存储的是ziplist或listpack(高版本)，它结合了链表和ziplist 的优点：</p>
+<ul>
+<li>ziplist连续，节省内存，但ziplist过大会带来性能问题如连锁更新</li>
+<li>双向链表使用非连续的内存，提高内存利用率</li>
+</ul>
+<p>因此quicklist其实是把大的ziplist分割为多段小的ziplist，并通过双向链表连接，这样在内存利用与效率之间做了很好的平衡</p>
+<h2 id="6-ListPack"><a href="#6-ListPack" class="headerlink" title="6 ListPack"></a>6 ListPack</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829164800583.png" srcset="/img/loading.gif" lazyload alt="ListPack"></p>
+<ul>
+<li>废除了prevlen，而是使用len字段保存自身节点的长度(encoding+data)，只要知道节点首尾指针就可得到完整节点</li>
+<li>彻底解决了连锁更新问题，因为每个节点的len都是自包含的，某个节点更新不会影响到其他节点</li>
+</ul>
+<h2 id="7-总结"><a href="#7-总结" class="headerlink" title="7 总结"></a>7 总结</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829170335320.png" srcset="/img/loading.gif" lazyload alt="总结"></p>
+<p><strong>hash使用listpack和哈希表触发条件</strong></p>
+<ul>
+<li><code>hash-max-listpack-entries</code>: 如果Hash中的字段数量 小于或等于 这个值, Redis会尝试使用Listpack作为编码,默认512</li>
+<li><code>hash-max-listpack-value</code>:  如果Hash中所有字段和值的长度都小于或等于这个值，Redis才会使用Listpack,默认64字节</li>
+</ul>
+<p><strong>set使用整数集合和哈希表触发条件</strong></p>
+<ul>
+<li>存储值是整数</li>
+<li><code>set-max-intset-entries</code>, 最大元素数量小于此配置，默认512</li>
+</ul>
+<p>不满足上述两个条件的都会使用哈希表,而且从Hash Table无法逆转回IntSet</p>
+<p><strong>zset使用listpack和skiplist触发条件</strong></p>
+<ul>
+<li><code>zset-max-listpack-entries</code>: 如果Zset中的元素数量 小于或等于 这个值，Redis会尝试使用Listpack作为编码, 默认128</li>
+<li><code>zset-max-listpack-value</code>: 如果Zset中所有成员的长度都小于或等于这个值，Redis才会使用Listpack，默认64字节</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">学习笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="print-no-link">#中间件</a>
+      
+        <a href="/tags/Redis/" class="print-no-link">#Redis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/08/30/TLS%E5%8A%A0%E5%AF%86%E8%BF%87%E7%A8%8B/" title="TLS加密过程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">TLS加密过程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/07/25/%E8%BE%93%E5%85%A5URL%E5%88%B0%E7%BD%91%E9%A1%B5%E6%98%BE%E7%A4%BA%E4%B8%AD%E9%97%B4%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88/" title="输入URL到网页显示中间发生了什么">
+                        <span class="hidden-mobile">输入URL到网页显示中间发生了什么</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'zhangphh/zhangphh-blogs-comments');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       # <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> # <i class="iconfont icon-love"></i> # <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

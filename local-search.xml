@@ -4,6 +4,83 @@
   
   
   <entry>
+    <title>http多版本间区别</title>
+    <link href="/2025/08/30/http%E5%A4%9A%E7%89%88%E6%9C%AC%E9%97%B4%E5%8C%BA%E5%88%AB/"/>
+    <url>/2025/08/30/http%E5%A4%9A%E7%89%88%E6%9C%AC%E9%97%B4%E5%8C%BA%E5%88%AB/</url>
+    
+    <content type="html"><![CDATA[<h1 id="1-对头阻塞是什么"><a href="#1-对头阻塞是什么" class="headerlink" title="1.对头阻塞是什么"></a>1.对头阻塞是什么</h1><blockquote><p>队头阻塞是指：前面的请求或响应未完成，导致后面的请求或响应被阻塞，不能继续处理</p></blockquote><h2 id="1-2-HTTP-1-1-中的队头阻塞问题："><a href="#1-2-HTTP-1-1-中的队头阻塞问题：" class="headerlink" title="1.2 HTTP&#x2F;1.1 中的队头阻塞问题："></a>1.2 HTTP&#x2F;1.1 中的队头阻塞问题：</h2><ul><li>虽然 HTTP&#x2F;1.1 支持持久连接（Keep-Alive），但在同一个 TCP 连接中，请求必须串行发送，响应也必须按顺序返回。</li><li>如果前一个响应较慢，就会阻塞后续响应的发送，即使后续请求可以很快处理也得排队。</li><li>为了缓解这个问题，浏览器往往为同一域名开启多个 TCP 连接，但会带来资源开销和拥塞控制成本。</li></ul><h2 id="1-2-HTTP-2-的改进：多路复用解决应用层队头阻塞"><a href="#1-2-HTTP-2-的改进：多路复用解决应用层队头阻塞" class="headerlink" title="1.2 HTTP&#x2F;2 的改进：多路复用解决应用层队头阻塞"></a>1.2 HTTP&#x2F;2 的改进：多路复用解决应用层队头阻塞</h2><ul><li><p>HTTP&#x2F;2 在一个 TCP 连接中支持多路复用，即：</p><ul><li>把每个请求和响应划分成多个帧（frame）</li><li>通过不同的流 ID进行标识</li><li>并发交错传输，不再强制顺序处理</li></ul></li><li><p>因此，一个请求的延迟不会阻塞其它请求响应，显著提升性能。</p></li></ul><p><strong>注意</strong>：HTTP&#x2F;2 仍存在 TCP 层队头阻塞<br>HTTP&#x2F;2 虽然解决了应用层的队头阻塞，但由于仍基于 TCP 协议，其底层在遇到丢包时仍需按序重传，可能会影响多个流。</p><p>为了解决这个问题，HTTP&#x2F;3 使用了 QUIC（基于 UDP），彻底解决了传输层队头阻塞。</p><h1 id="2-HTTP-2相较于HTTP-1-1有哪些改进？"><a href="#2-HTTP-2相较于HTTP-1-1有哪些改进？" class="headerlink" title="2.HTTP&#x2F;2相较于HTTP&#x2F;1.1有哪些改进？"></a>2.HTTP&#x2F;2相较于HTTP&#x2F;1.1有哪些改进？</h1><p>HTTP&#x2F;2是对HTTP&#x2F;1.1的一次重大升级，主要解决了HTTP&#x2F;1.1中存在的性能问题。它的核心改进有以下几点：</p><ul><li>首先，HTTP&#x2F;2引入了 <strong>二进制帧</strong> 机制，将HTTP消息分解为更小的二进制编码帧即HEADER帧与DATA帧，替代了HTTP&#x2F;1.1的文本格式，使数据传输更加高效和可靠。</li><li>其次，HTTP&#x2F;2实现了 <strong>多路复用</strong> ，允许在单个TCP连接上同时发送多个请求和响应，这些请求和响应可以交错进行而互不影响。这解决了HTTP&#x2F;1.1中的队头阻塞问题，大大提高了连接的利用效率。</li><li>第三，HTTP&#x2F;2采用了 <strong>HPACK算法</strong> 进行头部压缩，通过静态表、动态表和Huffman编码三种方式，有效减少了重复头部的传输，降低了网络开销。</li><li>第四，HTTP&#x2F;2支持 <strong>服务器推送</strong> 功能，服务器可以在客户端请求一个资源时，主动推送与之相关的其他资源，减少了客户端的请求次数和等待时间。</li><li>最后，HTTP&#x2F;2在设计上保持了与HTTP&#x2F;1.1的兼容性，没有改变URI格式和HTTP的核心语义，只改变了数据传输的方式，这使得升级过渡更加平滑。</li></ul><p>这些改进共同解决了HTTP&#x2F;1.1在现代网络环境下的性能瓶颈，使得网页加载速度更快，用户体验更好</p><h1 id="3-http-3-0的优势？"><a href="#3-http-3-0的优势？" class="headerlink" title="3.http 3.0的优势？"></a>3.http 3.0的优势？</h1><p>HTTP&#x2F;3 的核心优势是用 QUIC 协议替代 TCP，直接解决传输层队头阻塞问题：QUIC 在 UDP 上实现多路复用，每个流独立传输，丢包不影响其他流。同时：</p><ul><li>连接更快（0-RTT 重连 + 1-RTT 首连）；</li><li>内置加密（TLS 1.3）；</li><li>支持网络无缝切换（Connection ID 保持连接）；</li><li>拥塞控制更灵活（用户空间实现）。<br>这些改进显著提升了高延迟、不稳定网络（如移动端）下的性能。</li></ul><p>为什么不直接在 TCP 上修复这些问题？<br>因为 TCP 是操作系统内核协议，更新困难。而 QUIC 构建在 UDP 之上，可以在用户态实现，更易部署和演进。<br>UDP 无连接、无阻塞约束，允许 QUIC 自主实现可靠传输和拥塞控制，绕过 TCP 的协议僵化问题<br>在弱网环境（高丢包、高延迟）下性能提升显著（如视频会议、移动端应用）。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>学习笔记</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>网络</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>TLS加密过程</title>
+    <link href="/2025/08/30/TLS%E5%8A%A0%E5%AF%86%E8%BF%87%E7%A8%8B/"/>
+    <url>/2025/08/30/TLS%E5%8A%A0%E5%AF%86%E8%BF%87%E7%A8%8B/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>整理基于TLS 1.2</p></blockquote><p>TLS 握手主要包含两个阶段的加密机制：</p><ul><li>非对称加密用于：证书验证 + 密钥交换（加密 pre-master secret）</li><li>对称加密用于：实际数据传输（HTTP 内容） + 握手完成消息的加密校验</li></ul><h1 id="1-整个-TLS-1-2-握手过程如下："><a href="#1-整个-TLS-1-2-握手过程如下：" class="headerlink" title="1.整个 TLS 1.2 握手过程如下："></a>1.整个 TLS 1.2 握手过程如下：</h1><h2 id="1-1-TCP-连接建立"><a href="#1-1-TCP-连接建立" class="headerlink" title="1.1 TCP 连接建立"></a>1.1 TCP 连接建立</h2><p>客户端与服务器先通过TCP三次握手建立可靠连接</p><h2 id="1-2-ClientHello（客户端发起）"><a href="#1-2-ClientHello（客户端发起）" class="headerlink" title="1.2 ClientHello（客户端发起）"></a>1.2 ClientHello（客户端发起）</h2><p>客户端发送：</p><ul><li>支持的TLS版本和加密算法套件</li><li>一个随机数 client_random</li><li>以及可选的 SNI 域名字段</li></ul><p>这个阶段是明文发送的</p><h2 id="1-3-ServerHello-证书返回"><a href="#1-3-ServerHello-证书返回" class="headerlink" title="1.3 ServerHello + 证书返回"></a>1.3 ServerHello + 证书返回</h2><p>服务器返回：</p><ul><li>选定的 TLS 协议版本、加密算法</li><li>一个随机数 server_random</li><li>服务器的数字证书（包含服务器公钥、公钥签名、颁发者等）</li></ul><p>客户端拿到证书后会：使用内置的 CA 公钥验证服务器证书签名是否合法<br>这个阶段也是明文发送的</p><h2 id="1-4-客户端生成对称密钥（pre-master-secret）"><a href="#1-4-客户端生成对称密钥（pre-master-secret）" class="headerlink" title="1.4 客户端生成对称密钥（pre-master secret）"></a>1.4 客户端生成对称密钥（pre-master secret）</h2><ul><li><p>客户端生成一个pre-master secret</p></li><li><p>然后用服务器证书中的公钥加密它，发送给服务器，非对称加密</p></li><li><p>这一步是非对称加密（RSA&#x2F;ECDHE），确保密钥协商过程安全</p></li></ul><h2 id="1-5-双方派生对称密钥（session-key）"><a href="#1-5-双方派生对称密钥（session-key）" class="headerlink" title="1.5 双方派生对称密钥（session key）"></a>1.5 双方派生对称密钥（session key）</h2><ul><li>客户端和服务器都拥有：</li><li>pre-master secret</li><li>client_random</li><li>server_random</li></ul><p>双方使用 TLS 中的 PRF（伪随机函数）派生出：</p><ul><li>会话加密密钥（对称加密用）</li><li>消息认证密钥（MAC）</li><li>初始化向量等</li></ul><h2 id="1-6-Finished-消息互发"><a href="#1-6-Finished-消息互发" class="headerlink" title="1.6 Finished 消息互发"></a>1.6 Finished 消息互发</h2><p>双方用协商好的 对称密钥 对 Finished 消息加密发送<br>这一步开始使用对称加密（如 AES）<br>主要用于验证密钥是否一致，防止中间人攻击</p><h2 id="1-7-加密通信开始"><a href="#1-7-加密通信开始" class="headerlink" title="1.7 加密通信开始"></a>1.7 加密通信开始</h2><p>客户端与服务器使用协商好的会话密钥对后续的 HTTP 数据进行对称加密</p><h2 id="1-8-总结："><a href="#1-8-总结：" class="headerlink" title="1.8 总结："></a>1.8 总结：</h2><p>TLS 握手过程中一共进行四次核心消息交互，前两次是明文，后两次是加密：</p><ul><li>第一次是客户端发送 ClientHello，包含支持的算法、随机数等，明文发送；</li><li>第二次是服务器响应 ServerHello，附带证书、公钥等，也是明文；</li><li>第三次客户端发送密钥交换消息，使用服务端公钥加密（非对称加密），并用协商出的 session key 加密 Finished（对称加密）；</li><li>第四次服务器也发送 Finished，同样使用对称加密。</li></ul><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/tls_hand_shake.png" alt="tls握手过程"></p><h2 id="2-client-random和server-random的作用是什么？"><a href="#2-client-random和server-random的作用是什么？" class="headerlink" title="2.client_random和server_random的作用是什么？"></a>2.client_random和server_random的作用是什么？</h2><p>在 TLS 协议中，client_random 和 server_random 是由客户端和服务器在握手过程中各自生成的随机数。<br>它们和客户端生成的 pre-master secret 一起作为输入，通过 PRF（伪随机函数）派生出最终的 session key，用于后续对称加密。<br>这两个随机数的作用有三点：</p><ul><li>确保每次会话密钥都是唯一的，防止重放攻击；</li><li>参与派生对称加密密钥，增强密钥协商过程的安全性；</li><li>参与 Finished 消息的验证过程，确保握手完整性。</li></ul><h1 id="3-TLS-是基于-TCP-还是-UDP？"><a href="#3-TLS-是基于-TCP-还是-UDP？" class="headerlink" title="3.TLS 是基于 TCP 还是 UDP？"></a>3.TLS 是基于 TCP 还是 UDP？</h1><ul><li>TLS 通常建立在 TCP 协议之上，而非 UDP。因为 TLS 握手过程需要可靠、有序的数据传输，而 TCP 能够提供连接管理、丢包重传等功能，这是 UDP 不具备的。</li><li>TLS 握手在每次连接中只进行一次，具体包括多个阶段：协商协议版本、交换随机数、验证证书、公钥加密 pre-master、派生对称密钥、互相确认等。</li></ul><h1 id="4-CA-证书有什么用？为什么要引入它？"><a href="#4-CA-证书有什么用？为什么要引入它？" class="headerlink" title="4.CA 证书有什么用？为什么要引入它？"></a>4.CA 证书有什么用？为什么要引入它？</h1><p>CA 证书的作用是用于验证服务器的身份，它是 TLS&#x2F;HTTPS 中用于建立“信任机制”的核心部分。<br>在 TLS 握手中，服务器会把它的数字证书（包含服务器公钥）发给客户端。客户端无法直接判断这个证书是否真实可信，于是就依赖由受信任的 CA 签发的数字签名。<br>客户端使用系统或浏览器内置的 CA 公钥对证书的签名进行验证，从而确认这个公钥确实属于目标服务器，防止中间人伪造。<br>总结来说，CA 引入的目的是解决服务器公钥的可信性问题，防止中间人攻击，实现身份认证和安全通信。</p><h1 id="5-RSA-在-TLS-中有什么缺点？为什么现在用-ECDHE？"><a href="#5-RSA-在-TLS-中有什么缺点？为什么现在用-ECDHE？" class="headerlink" title="5.RSA 在 TLS 中有什么缺点？为什么现在用 ECDHE？"></a>5.RSA 在 TLS 中有什么缺点？为什么现在用 ECDHE？</h1><p>在 TLS 1.2 中，RSA 被用来加密客户端生成的 pre-master secret，从而实现密钥交换。但 RSA 的核心问题是 不支持前向保密，也就是一旦服务器私钥泄露，历史通信数据也能被解密，非常危险。<br>ECDHE 是基于椭圆曲线的临时密钥交换算法，它每次连接都会生成临时密钥对，即使服务器私钥泄露，历史通信内容也无法被还原，具备前向保密能力。同时，ECDHE 的性能更高、安全性更强，已经成为 TLS 1.3 的默认密钥交换方式。<br>因此，现代 TLS（特别是 TLS 1.3）已经弃用 RSA 密钥交换，全面转向使用 ECDHE 或 ECDHE-RSA&#x2F;ECDHE-ECDSA 等混合算法。</p><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/ECDHE.png" alt="ECDHE"></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>学习笔记</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>网络</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>redis数据结构</title>
+    <link href="/2025/08/30/redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    <url>/2025/08/30/redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</url>
+    
+    <content type="html"><![CDATA[<h1 id="redis-数据结构"><a href="#redis-数据结构" class="headerlink" title="redis 数据结构"></a>redis 数据结构</h1><h2 id="1-SDS-简单动态字符串"><a href="#1-SDS-简单动态字符串" class="headerlink" title="1 SDS 简单动态字符串"></a>1 SDS 简单动态字符串</h2><ul><li>len 字段，O(1)获取长度，二进制安全</li><li>alloc 字段，分配的空间长度</li><li>flags sds类型<ul><li>sdshdr5、sdshdr8、sdshdr16、sdshdr32、sdshdr64，五种类型结构体灵活保存不同长度字符串</li><li>取消内存对齐，进一步节省内存</li></ul></li><li>buf数组，字节数组，不仅可以保存字符串，还能保存二进制数据</li></ul><p><strong>扩容规则</strong></p><ul><li>新长度 &lt; alloc - len: 无需扩容</li><li>新长度 &gt; alloc - len &amp;&amp; 新长度 &lt; 1MB: len&#x3D;新长度 &amp;&amp; alloc &#x3D; 2*新长度</li><li>新长度 &gt; alloc - len &amp;&amp; 新长度 &lt; 1MB: len&#x3D;新长度 &amp;&amp; alloc &#x3D; 1MB</li></ul><h2 id="2-ZipList-压缩列表"><a href="#2-ZipList-压缩列表" class="headerlink" title="2 ZipList 压缩列表"></a>2 ZipList 压缩列表</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829110608909.png" alt="ZipList"></p><ul><li>zlbytes: 整个压缩列表占用内存<strong>字节</strong>数</li><li>zltail: 记录尾部节点距离起始地址字节数，即尾节点偏移量</li><li>zllen: entry节点数量</li><li>zlend: 尾部节点，固定值0xFF(255)</li><li>entry: 节点<ul><li>prevLen: 前一个节点长度，便于从后往前遍历<ul><li>如果前一个entry节点长度小于254字节，则用一个字节保存</li><li>如果前一个entry节点超过254字节，则当前节点的prevlen使用5个字节保存</li></ul></li><li>encoding: 用于区分entry值的类型和长度，针对不同类型分配对应数据结构，节约内存</li><li>data: 节点实际存储数据，长度和类型由encoding字段控制</li></ul></li></ul><p><strong>查找原理</strong></p><ul><li>查找头尾节点：根据ziplist的头部zllen等即可O(1)得到</li><li>查找非头尾节点：顺序遍历查找，O(n)</li></ul><p>因此，ziplist适合在数据量较少时使用，不适合保存过多的元素。</p><p><strong>连锁更新问题</strong><br>ziplist在更新或新增节点时，如果空间不够是需要重新分配的，当新增的元素过大时，后导致后续节点的prevlen变动，<br>如果后续节点新的prevlen阈值大于254时会扩充为5个字节，极端情况下可能会导致后续元素的 prevlen 占用空间都发生变化，<br>从而导致连锁更新问题，导致每个元素都会重新分配空间，造成性能下降。</p><p>因此，ziplist不适合在大规模数据下使用，数据较少时即使是发生了连锁更新也是可以接受的</p><h2 id="3-哈希表"><a href="#3-哈希表" class="headerlink" title="3 哈希表"></a>3 哈希表</h2><p><strong>渐进式rehash</strong><br>为避免hash冲突过多导致哈系统中数据过多性能下降问题，哈希表会在满足特定条件时执行扩容，扩为原来的两倍大小。<br>为避免数据copy带来的巨大开销，redis采用了渐进式哈希思想，即在后续的增删改查时把相关的数据存储到新hash表中。</p><p><strong>rehash触发条件</strong><br>factor &#x3D; 节点数量&#x2F;hashTable大小</p><ul><li>当factor大于1等于，并且redis没有在执行bgsave或berewriteaof命令，即redis没有在执行RDB快照或AOF重写时</li><li>当factor大于等于5，hash冲突过于严重，不管有没有在进行RDB快照或AOF重写都会强制执行rehash</li></ul><h2 id="4-SkipList跳表"><a href="#4-SkipList跳表" class="headerlink" title="4 SkipList跳表"></a>4 SkipList跳表</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829160832583.png" alt="跳表"></p><p><strong>查询过程</strong></p><ul><li>先比较权重，如果目标节点权重比当前节点权重大，则访问该层下一节点</li><li>如果目标节点权重与当前节点权重相等，则比较sds值，如果目标节点的sds值大于当前节点的sds值，则访问该层下一节点</li></ul><p><strong>新增节点层级</strong></p><ul><li>创建节点时会生成一个0~1的随机数，当小于0.25时，则层数就会加一，直到大于0.25。因此有25%的概率升级层级</li><li>新节点在第二层的概率为25%，第三层为25% * 25%，以此类推</li></ul><p><strong>为什么用跳表而不是红黑树等平衡树</strong></p><ul><li>实现简单，跳表是链表+多级索引，插入删除只需要修改局部指针，不会像平衡树那样进行复杂的自旋</li><li>性能和平衡树相近，可达O(log n)，代码实现更轻量</li><li>更好的范围查询，多级索引+水平指针，不需要进行中序遍历</li><li>内存占用更少，相对于红黑树要存储父节点、颜色、左右指针等额外信息，跳过整体内存可控</li></ul><h2 id="5-QuickList"><a href="#5-QuickList" class="headerlink" title="5 QuickList"></a>5 QuickList</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829163154947.png" alt="QuickList"></p><p>quicklist是一个双向链表，里面存储的是ziplist或listpack(高版本)，它结合了链表和ziplist 的优点：</p><ul><li>ziplist连续，节省内存，但ziplist过大会带来性能问题如连锁更新</li><li>双向链表使用非连续的内存，提高内存利用率</li></ul><p>因此quicklist其实是把大的ziplist分割为多段小的ziplist，并通过双向链表连接，这样在内存利用与效率之间做了很好的平衡</p><h2 id="6-ListPack"><a href="#6-ListPack" class="headerlink" title="6 ListPack"></a>6 ListPack</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829164800583.png" alt="ListPack"></p><ul><li>废除了prevlen，而是使用len字段保存自身节点的长度(encoding+data)，只要知道节点首尾指针就可得到完整节点</li><li>彻底解决了连锁更新问题，因为每个节点的len都是自包含的，某个节点更新不会影响到其他节点</li></ul><h2 id="7-总结"><a href="#7-总结" class="headerlink" title="7 总结"></a>7 总结</h2><p><img src="https://gitee.com/zhangphh/images-collections/raw/master/20250829170335320.png" alt="总结"></p><p><strong>hash使用listpack和哈希表触发条件</strong></p><ul><li><code>hash-max-listpack-entries</code>: 如果Hash中的字段数量 小于或等于 这个值, Redis会尝试使用Listpack作为编码,默认512</li><li><code>hash-max-listpack-value</code>:  如果Hash中所有字段和值的长度都小于或等于这个值，Redis才会使用Listpack,默认64字节</li></ul><p><strong>set使用整数集合和哈希表触发条件</strong></p><ul><li>存储值是整数</li><li><code>set-max-intset-entries</code>, 最大元素数量小于此配置，默认512</li></ul><p>不满足上述两个条件的都会使用哈希表,而且从Hash Table无法逆转回IntSet</p><p><strong>zset使用listpack和skiplist触发条件</strong></p><ul><li><code>zset-max-listpack-entries</code>: 如果Zset中的元素数量 小于或等于 这个值，Redis会尝试使用Listpack作为编码, 默认128</li><li><code>zset-max-listpack-value</code>: 如果Zset中所有成员的长度都小于或等于这个值，Redis才会使用Listpack，默认64字节</li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>学习笔记</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>中间件</tag>
+      
+      <tag>Redis</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>输入URL到网页显示中间发生了什么</title>
     <link href="/2025/07/25/%E8%BE%93%E5%85%A5URL%E5%88%B0%E7%BD%91%E9%A1%B5%E6%98%BE%E7%A4%BA%E4%B8%AD%E9%97%B4%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88/"/>
     <url>/2025/07/25/%E8%BE%93%E5%85%A5URL%E5%88%B0%E7%BD%91%E9%A1%B5%E6%98%BE%E7%A4%BA%E4%B8%AD%E9%97%B4%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88/</url>
@@ -13,7 +90,7 @@
     
     <categories>
       
-      <category>面试题</category>
+      <category>学习笔记</category>
       
     </categories>
     
